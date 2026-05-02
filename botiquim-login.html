@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso — Botiquim.bar</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0806;--surface:#131008;--card:#1a1510;--border:#2a2016;--border2:#352a1a;
+  --amber:#d4872a;--amber-light:#e8a94d;--amber-dim:#6b4012;
+  --cream:#f0e6d3;--muted:#6b5c48;--text:#ddd0be;
+  --green:#3d9e60;--red:#b84040;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;overflow:hidden}
+
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:0.25;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E")}
+
+.glow{position:fixed;top:-150px;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(212,135,42,0.1) 0%,transparent 70%);pointer-events:none}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:2.5rem 2rem;width:100%;max-width:400px;position:relative;z-index:10;animation:fadeUp 0.5s ease}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);border-radius:18px 18px 0 0}
+
+.logo{display:flex;align-items:center;gap:0.6rem;justify-content:center;margin-bottom:2rem}
+.logo-mark{width:38px;height:38px;border:1.5px solid var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1rem;color:var(--amber)}
+.logo-text{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--cream)}
+.logo-text span{color:var(--amber);font-style:italic}
+
+.view{display:none}
+.view.active{display:block;animation:fadeIn 0.3s ease}
+
+.view-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--cream);margin-bottom:0.3rem}
+.view-sub{font-size:0.82rem;color:var(--muted);margin-bottom:1.75rem}
+
+.field{margin-bottom:1.1rem}
+label{display:block;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin-bottom:0.4rem}
+input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:300;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+input:focus{border-color:var(--amber-dim);box-shadow:0 0 0 3px rgba(212,135,42,0.08)}
+input.error{border-color:var(--red)}
+
+.btn-primary{width:100%;background:var(--amber);color:var(--bg);border:none;border-radius:8px;padding:0.875rem;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:0.04em;cursor:pointer;transition:all 0.2s;margin-top:0.25rem}
+.btn-primary:hover{background:var(--amber-light);box-shadow:0 4px 20px rgba(212,135,42,0.3);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+.btn-link{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;padding:0;transition:color 0.15s;text-decoration:underline;text-underline-offset:3px}
+.btn-link:hover{color:var(--amber)}
+
+.links-row{display:flex;justify-content:center;margin-top:1.25rem}
+
+.alert{padding:0.75rem 1rem;border-radius:8px;font-size:0.82rem;margin-bottom:1rem;display:none}
+.alert.error{background:rgba(184,64,64,0.1);border:1px solid rgba(184,64,64,0.25);color:#e07070}
+.alert.success{background:rgba(61,158,96,0.1);border:1px solid rgba(61,158,96,0.25);color:#6dca8a}
+.alert.visible{display:block}
+
+.back-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem}
+.back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;transition:color 0.15s;padding:0}
+.back-btn:hover{color:var(--amber)}
+.back-label{font-size:0.75rem;color:var(--muted)}
+
+footer{position:relative;z-index:10;margin-top:1.5rem;font-size:0.7rem;color:var(--muted);text-align:center}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">B</div>
+    <div class="logo-text">botiquim<span>.bar</span></div>
+  </div>
+
+  <!-- VIEW: Login -->
+  <div class="view active" id="v-login">
+    <p class="view-title">Acesso restrito</p>
+    <p class="view-sub">Entre com suas credenciais para acessar o painel.</p>
+    <div class="alert error" id="login-error"></div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="links-row">
+      <button class="btn-link" onclick="showView('v-forgot')">Esqueci minha senha</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Forgot password -->
+  <div class="view" id="v-forgot">
+    <div class="back-row">
+      <button class="back-btn" onclick="showView('v-login')">←</button>
+      <span class="back-label">Voltar ao login</span>
+    </div>
+    <p class="view-title">Recuperar senha</p>
+    <p class="view-sub">Enviaremos um link para redefinir sua senha.</p>
+    <div class="alert error" id="forgot-error"></div>
+    <div class="alert success" id="forgot-success"></div>
+    <div class="field">
+      <label>E-mail cadastrado</label>
+      <input type="email" id="forgot-email" placeholder="seu@email.com">
+    </div>
+    <button class="btn-primary" id="btn-forgot" onclick="doForgot()">Enviar link de recuperação</button>
+  </div>
+
+  <!-- VIEW: Reset password (após clicar no link do e-mail) -->
+  <div class="view" id="v-reset">
+    <p class="view-title">Criar nova senha</p>
+    <p class="view-sub">Escolha uma senha segura para sua conta.</p>
+    <div class="alert error" id="reset-error"></div>
+    <div class="field">
+      <label>Nova senha</label>
+      <input type="password" id="reset-pass" placeholder="Mínimo 8 caracteres">
+    </div>
+    <div class="field">
+      <label>Confirmar senha</label>
+      <input type="password" id="reset-confirm" placeholder="Repita a senha">
+    </div>
+    <button class="btn-primary" id="btn-reset" onclick="doReset()">Salvar nova senha</button>
+  </div>
+</div>
+
+<footer>© 2025 botiquim.bar · Acesso exclusivo para colaboradores</footer>
+
+<script>
+// ── CONFIG ──────────────────────────────────────
+const CONFIG = {
+  supabaseUrl: 'https://cchfqzlshslrmyqhsypq.supabase.co',   // ← sua URL do Supabase
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzAzMzQsImV4cCI6MjA5MzI0NjMzNH0.EKlr5OtUiur1dyj5gDZ87CZvOkZW1eW1mJoT_ylExQw',                  // ← sua anon key
+  painelUrl:   'botiquim-painel.html',        // ← URL do painel
+}
+// ────────────────────────────────────────────────
+
+const { createClient } = supabase
+const db = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey)
+
+// Verifica se já está logado
+db.auth.getSession().then(({ data: { session } }) => {
+  if (session) window.location.href = CONFIG.painelUrl
+})
+
+// Verifica se voltou do link de reset
+db.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') showView('v-reset')
+})
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.getElementById(id).classList.add('active')
+  clearAlerts()
+}
+
+function clearAlerts() {
+  document.querySelectorAll('.alert').forEach(a => { a.classList.remove('visible'); a.textContent = '' })
+}
+
+function showAlert(id, msg, type='error') {
+  const el = document.getElementById(id)
+  el.textContent = msg
+  el.className = `alert ${type} visible`
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId)
+  btn.disabled = loading
+  btn.textContent = loading ? 'Aguarde...' : btn.dataset.label || btn.textContent
+}
+
+// ── LOGIN ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim()
+  const pass  = document.getElementById('login-pass').value
+  clearAlerts()
+  if (!email || !pass) { showAlert('login-error', 'Preencha e-mail e senha.'); return }
+
+  setLoading('btn-login', true)
+  document.getElementById('btn-login').dataset.label = 'Entrar'
+
+  const { error } = await db.auth.signInWithPassword({ email, password: pass })
+  setLoading('btn-login', false)
+  document.getElementById('btn-login').textContent = 'Entrar'
+
+  if (error) {
+    const msg = error.message.includes('Invalid') ? 'E-mail ou senha incorretos.' : error.message
+    showAlert('login-error', msg)
+    return
+  }
+
+  // Verifica se usuário está ativo
+  const { data: profile } = await db.from('profiles').select('active').eq('id', (await db.auth.getUser()).data.user.id).single()
+  if (profile && !profile.active) {
+    await db.auth.signOut()
+    showAlert('login-error', 'Sua conta está desativada. Fale com o administrador.')
+    return
+  }
+
+  window.location.href = CONFIG.painelUrl
+}
+
+// Enter para logar
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-pass').focus() })
+
+// ── FORGOT PASSWORD ──
+async function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim()
+  clearAlerts()
+  if (!email) { showAlert('forgot-error', 'Informe seu e-mail.'); return }
+
+  setLoading('btn-forgot', true)
+  document.getElementById('btn-forgot').dataset.label = 'Enviar link de recuperação'
+
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/' + window.location.pathname.split('/').slice(0,-1).join('/') + '/botiquim-login.html'
+  })
+
+  setLoading('btn-forgot', false)
+  document.getElementById('btn-forgot').textContent = 'Enviar link de recuperação'
+
+  if (error) { showAlert('forgot-error', 'Erro ao enviar. Verifique o e-mail.'); return }
+  showAlert('forgot-success', '✓ Link enviado! Verifique sua caixa de entrada (e o spam).', 'success')
+  document.getElementById('forgot-email').value = ''
+}
+
+// ── RESET PASSWORD ──
+async function doReset() {
+  const pass    = document.getElementById('reset-pass').value
+  const confirm = document.getElementById('reset-confirm').value
+  clearAlerts()
+  if (pass.length < 8)    { showAlert('reset-error', 'A senha deve ter ao menos 8 caracteres.'); return }
+  if (pass !== confirm)   { showAlert('reset-error', 'As senhas não coincidem.'); return }
+
+  setLoading('btn-reset', true)
+  document.getElementById('btn-reset').dataset.label = 'Salvar nova senha'
+
+  const { error } = await db.auth.updateUser({ password: pass })
+  setLoading('btn-reset', false)
+  document.getElementById('btn-reset').textContent = 'Salvar nova senha'
+
+  if (error) { showAlert('reset-error', 'Erro ao atualizar senha. Tente novamente.'); return }
+  window.location.href = CONFIG.painelUrl
+}
+</script>
+</body>
+</html>
