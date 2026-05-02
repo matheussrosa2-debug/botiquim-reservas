@@ -346,9 +346,9 @@ async function initAuth(){
   const {data:{session}} = await db.auth.getSession()
   if(!session){window.location.href=CONFIG.loginUrl;return false}
   currentUser=session.user
-  const {data:p} = await db.from('profiles').select('*').eq('id',currentUser.id).single()
+  const {data:p, error:pErr} = await db.from('profiles').select('*').eq('id',currentUser.id).single()
   currentProfile=p
-  if(!p?.active){await db.auth.signOut();window.location.href=CONFIG.loginUrl;return false}
+  if(p && p.active === false){await db.auth.signOut();window.location.href=CONFIG.loginUrl;return false}
   const name=p?.name||currentUser.email.split('@')[0]
   document.getElementById('user-name').textContent=name
   document.getElementById('user-avatar').textContent=name.charAt(0).toUpperCase()
