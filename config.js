@@ -12,9 +12,9 @@ const CONFIG = {
   logoUrl:      'imagens/Logo_Em_Alta_Botiquim.png',
 
   // ── Supabase ─────────────────────────────────────────────────────
-  supabaseUrl:     'https://XXXX.supabase.co',
-  supabaseKey:     'eyJhbGc...',      // anon key
-  supabaseService: 'eyJhbGc...',      // service_role key (só no painel)
+  supabaseUrl:     'https://cchfqzlshslrmyqhsypq.supabase.co',
+  supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzAzMzQsImV4cCI6MjA5MzI0NjMzNH0.EKlr5OtUiur1dyj5gDZ87CZvOkZW1eW1mJoT_ylExQw',      // anon key
+  supabaseService: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY3MDMzNCwiZXhwIjoyMDkzMjQ2MzM0fQ.SWm-c27yY5hj2c51NuaUqKBB-wSMWqqm5y0FKKmTZ4A',      // service_role key (só no painel)
 
   // ── Z-API WhatsApp ────────────────────────────────────────────────
   zapiInstance:    'SUA_INSTANCIA',
