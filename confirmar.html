@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmar Reserva</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#090806;--card:#191410;--border:#2a2016;--amber:#d4872a;--cream:#f0e6d3;--muted:#6b5c48;--text:#ddd0be;--green:#3d9e60;--red:#b84040}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;position:relative}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:18px 18px 0 0;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+.logo{display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:2rem}
+.logo-mark{width:36px;height:36px;border:1.5px solid var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:0.95rem;color:var(--amber)}
+.logo-text{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--cream)}
+.logo-text span{color:var(--amber);font-style:italic}
+.icon{font-size:3rem;margin-bottom:1rem}
+.title{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:0.5rem}
+.sub{font-size:0.85rem;color:var(--muted);line-height:1.5;margin-bottom:1.5rem}
+.details{background:#0f0c08;border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;text-align:left}
+.det-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #1a1510;font-size:0.85rem}
+.det-row:last-child{border:none}
+.det-key{color:var(--muted)}
+.det-val{color:var(--cream);font-weight:500}
+.badge{display:inline-flex;align-items:center;gap:0.3rem;border-radius:20px;padding:0.3rem 0.875rem;font-size:0.78rem;font-weight:600;margin-bottom:1rem}
+.badge.ok{background:rgba(61,158,96,0.12);border:1px solid rgba(61,158,96,0.3);color:#5bc47a}
+.badge.err{background:rgba(184,64,64,0.12);border:1px solid rgba(184,64,64,0.3);color:#e07070}
+.hint{font-size:0.75rem;color:var(--muted);margin-top:1rem}
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark" id="logo-l">B</div>
+    <div class="logo-text" id="logo-n">restaurante</div>
+  </div>
+  <div id="st-load">
+    <div class="spinner"></div>
+    <div class="title">Confirmando reserva...</div>
+    <div class="sub">Aguarde um instante.</div>
+  </div>
+  <div id="st-ok" style="display:none">
+    <div class="icon">&#x2705;</div>
+    <div class="badge ok">Reserva confirmada</div>
+    <div class="title" id="ok-name"></div>
+    <div class="sub">WhatsApp de confirmacao enviado ao cliente.</div>
+    <div class="details" id="ok-det"></div>
+    <div class="hint">Voce pode fechar esta pagina.</div>
+  </div>
+  <div id="st-err" style="display:none">
+    <div class="icon">&#x274C;</div>
+    <div class="badge err" id="err-msg">Erro</div>
+    <div class="title">Nao foi possivel confirmar</div>
+    <div class="sub">A reserva pode ja ter sido processada ou o link e invalido. Acesse o painel para verificar.</div>
+    <div class="hint">Voce pode fechar esta pagina.</div>
+  </div>
+</div>
+<script>
+const { createClient } = supabase
+const db = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey)
+document.getElementById('logo-l').textContent = CONFIG.logoLetra || 'R'
+document.getElementById('logo-n').textContent = CONFIG.restaurante || 'Restaurante'
+
+async function run() {
+  const p = new URLSearchParams(window.location.search)
+  const id = p.get('id'), token = p.get('token')
+  if (!id || !token) { showErr('Link invalido.'); return }
+  const { data, error } = await db.rpc('confirm_reservation', { res_id: id, token })
+  if (error || !data?.ok) { showErr(data?.msg || 'Reserva nao encontrada ou ja processada.'); return }
+  const r = data
+  const msg = '*Reserva confirmada!*\n\nOla, ' + r.name.split(' ')[0] + '! Sua reserva no *' + CONFIG.restaurante + '* esta confirmada.\n\nData: ' + fmt(r.date) + '\nHorario: ' + r.time + '\nAmbiente: ' + r.ambiente + '\nMesa: ' + (r.mesa || 'A definir') + '\nPessoas: ' + r.people + '\nCodigo: ' + id + '\n\nNos vemos la!'
+  await sendWA(r.phone, msg)
+  document.getElementById('st-load').style.display = 'none'
+  document.getElementById('st-ok').style.display = 'block'
+  document.getElementById('ok-name').textContent = r.name
+  document.getElementById('ok-det').innerHTML =
+    row('Data', fmt(r.date)) + row('Horario', r.time) + row('Pessoas', r.people) +
+    row('Ambiente', r.ambiente) + row('Mesa', r.mesa || 'A definir') + row('Codigo', id)
+}
+
+function row(k, v) { return '<div class="det-row"><span class="det-key">' + k + '</span><span class="det-val">' + v + '</span></div>' }
+function showErr(msg) { document.getElementById('st-load').style.display='none'; document.getElementById('st-err').style.display='block'; document.getElementById('err-msg').textContent=msg }
+function fmt(d) { if(!d)return'—'; const[y,m,dd]=d.split('-'); return dd+'/'+m+'/'+y }
+async function sendWA(phone, message) {
+  if (!CONFIG.zapiInstance || CONFIG.zapiInstance === 'SUA_INSTANCIA') return
+  const ph = '55' + phone.replace(/\D/g,'').replace(/^55/,'')
+  try { await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text', { method:'POST', headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken}, body:JSON.stringify({phone:ph,message}) }) } catch(e) {}
+}
+run()
+</script>
+</body>
+</html>
