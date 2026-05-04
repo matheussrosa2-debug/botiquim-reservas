@@ -10,20 +10,21 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#090806;--surface:#131008;--card:#191410;--card2:#1f1a12;
-  --border:#2a2016;--border2:#352a1a;
-  --amber:#d4872a;--amber-light:#e8a94d;--amber-dim:#6b4012;
-  --cream:#f0e6d3;--muted:#6b5c48;--text:#ddd0be;
+  --bg:#0a0605;--surface:#110809;--card:#18100c;--card2:#1e1510;
+  --border:#2e1a18;--border2:#3d2420;
+  --amber:#C41E3A;--amber-light:#e0364f;--amber-dim:#7A1020;
+  --gold:#C9A84C;--gold-dim:#7a6020;
+  --cream:#f5ede0;--muted:#7a5c52;--text:#e8d8cc;
   --green:#3d9e60;--green-bg:rgba(61,158,96,0.1);--green-border:rgba(61,158,96,0.25);
-  --red:#b84040;--red-bg:rgba(184,64,64,0.1);--red-border:rgba(184,64,64,0.25);
-  --yellow-bg:rgba(184,146,42,0.1);--yellow-border:rgba(184,146,42,0.3);
+  --red:#C41E3A;--red-bg:rgba(196,30,58,0.1);--red-border:rgba(196,30,58,0.3);
+  --yellow-bg:rgba(201,168,76,0.1);--yellow-border:rgba(201,168,76,0.3);
   --blue-bg:rgba(58,120,176,0.1);--blue-border:rgba(58,120,176,0.25);
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.25rem;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;gap:0.5rem;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:0.5rem}
-.logo-mark{width:30px;height:30px;border:1.5px solid var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:0.9rem;color:var(--amber);flex-shrink:0}
+.logo-mark{display:none}
 .logo-text{font-family:'Playfair Display',serif;font-size:1rem;color:var(--cream)}
 .logo-text span{color:var(--amber);font-style:italic}
 .topbar-mid{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
@@ -39,8 +40,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .topbar-right{display:flex;align-items:center;gap:0.5rem}
 .u-avatar{width:26px;height:26px;border-radius:50%;background:var(--amber-dim);border:1px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:0.68rem;color:var(--amber);font-weight:600;flex-shrink:0}
 .role-chip{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.12rem 0.45rem;border-radius:10px;font-weight:600}
-.role-chip.master{background:rgba(212,135,42,0.2);border:1px solid rgba(212,135,42,0.4);color:var(--amber)}
-.role-chip.admin{background:rgba(212,135,42,0.12);border:1px solid rgba(212,135,42,0.25);color:var(--amber)}
+.role-chip.master{background:rgba(196,30,58,0.2);border:1px solid rgba(212,135,42,0.4);color:var(--amber)}
+.role-chip.admin{background:rgba(196,30,58,0.12);border:1px solid rgba(212,135,42,0.25);color:var(--amber)}
 .role-chip.gerente{background:var(--blue-bg);border:1px solid var(--blue-border);color:#6aaad4}
 .role-chip.staff{background:var(--green-bg);border:1px solid var(--green-border);color:#6dca8a}
 .btn-logout{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:0.22rem 0.55rem;font-size:0.68rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
@@ -127,7 +128,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .week-day-name{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
 .week-day-num{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--cream);line-height:1.2}
 .week-day-num.today-num{color:var(--amber)}
-.week-event{background:rgba(212,135,42,0.1);border:1px solid rgba(212,135,42,0.2);border-radius:4px;padding:0.2rem 0.4rem;font-size:0.58rem;color:var(--amber);margin-bottom:0.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-event{background:rgba(196,30,58,0.1);border:1px solid rgba(196,30,58,0.2);border-radius:4px;padding:0.2rem 0.4rem;font-size:0.58rem;color:var(--amber);margin-bottom:0.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .week-res{background:var(--card2);border-radius:4px;padding:0.2rem 0.4rem;font-size:0.6rem;color:var(--text);margin-bottom:0.2rem;cursor:pointer;border-left:2px solid var(--border2)}
 .week-res.pending{border-left-color:#b8922a}.week-res.confirmed{border-left-color:var(--green)}.week-res.cancelled{border-left-color:var(--red);opacity:0.5}
 .week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
@@ -145,7 +146,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .brief-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1rem;margin-bottom:0.6rem}
 .brief-hdr{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem;flex-wrap:wrap}
 .brief-time{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--amber);flex-shrink:0}
-.brief-mesa-tag{background:var(--amber-dim);color:var(--amber-light);border-radius:5px;padding:0.15rem 0.5rem;font-size:0.7rem;font-weight:600}
+.brief-mesa-tag{background:rgba(196,30,58,0.2);color:#e07070;border-radius:5px;padding:0.15rem 0.5rem;font-size:0.7rem;font-weight:600}
 .brief-amb-tag{font-size:0.65rem;color:var(--muted);margin-top:0.15rem}
 .brief-id-tag{margin-left:auto;font-size:0.65rem;color:var(--muted);background:var(--card2);border:1px solid var(--border2);border-radius:5px;padding:0.12rem 0.45rem}
 .brief-name{font-size:1rem;color:var(--cream);font-weight:500;margin-bottom:0.3rem}
@@ -282,7 +283,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .map-edit-mode .map-mesa-dot{cursor:grab;border-style:dashed}
 .map-edit-mode .map-mesa-dot:active{cursor:grabbing}
 .map-edit-bar{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap}
-.map-edit-hint{font-size:0.72rem;color:var(--amber);background:rgba(212,135,42,0.08);border:1px solid rgba(212,135,42,0.2);border-radius:6px;padding:0.35rem 0.65rem}
+.map-edit-hint{font-size:0.72rem;color:var(--amber);background:rgba(196,30,58,0.08);border:1px solid rgba(196,30,58,0.2);border-radius:6px;padding:0.35rem 0.65rem}
 .map-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem}
 .map-legend-row{display:flex;gap:0.75rem;flex-wrap:wrap}
 @media(max-width:900px){.sidebar{display:none}.stats-bar{grid-template-columns:repeat(2,1fr)}.map-grid{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,1fr)}}
@@ -304,8 +305,7 @@ if (typeof CONFIG !== 'undefined') {
 
 <header class="topbar">
   <div class="logo">
-    <div class="logo-mark" id="logo-l">B</div>
-    <div class="logo-text" id="logo-n">botiquim<span>.bar</span></div>
+    <img src="imagens/Logo_Em_Alta_Botiquim.png" alt="Botiquim" style="height:44px;width:auto;object-fit:contain">
   </div>
   <div class="topbar-mid">
     <div class="date-nav">
@@ -578,7 +578,7 @@ if (typeof CONFIG !== 'undefined') {
       <span class="cfg-collapse-arrow">▼</span>
     </div>
     <div class="cfg-collapse-body">
-      <div style="background:rgba(212,135,42,0.06);border:1px solid rgba(212,135,42,0.15);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.78rem;color:var(--muted)">
+      <div style="background:rgba(212,135,42,0.06);border:1px solid rgba(196,30,58,0.15);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.78rem;color:var(--muted)">
         Os lembretes são disparados automaticamente via Supabase Edge Functions. Configure os horários e ative ou desative cada um abaixo.
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">

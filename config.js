@@ -9,21 +9,22 @@ const CONFIG = {
   // ── Identidade ───────────────────────────────────────────────────
   restaurante:  'Botiquim.bar',
   logoLetra:    'B',
+  logoUrl:      'imagens/Logo_Em_Alta_Botiquim.png',
 
   // ── Supabase ─────────────────────────────────────────────────────
-  supabaseUrl:     'https://cchfqzlshslrmyqhsypq.supabase.co',
-  supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzAzMzQsImV4cCI6MjA5MzI0NjMzNH0.EKlr5OtUiur1dyj5gDZ87CZvOkZW1eW1mJoT_ylExQw',      // anon key
-  supabaseService: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY3MDMzNCwiZXhwIjoyMDkzMjQ2MzM0fQ.SWm-c27yY5hj2c51NuaUqKBB-wSMWqqm5y0FKKmTZ4A',      // service_role key (só no painel)
+  supabaseUrl:     'https://XXXX.supabase.co',
+  supabaseKey:     'eyJhbGc...',      // anon key
+  supabaseService: 'eyJhbGc...',      // service_role key (só no painel)
 
   // ── Z-API WhatsApp ────────────────────────────────────────────────
-  zapiInstance:    '3F2456FA9E5844335AF19E024201EAF7',
-  zapiToken:       '01B69918DFC5B413DA0232E4',
-  zapiClientToken: 'Fc670ff75ae0a4e149f08a8cde0ce86e9S',
-  managerPhone:    '5519981654244',   // DDI + DDD + número, sem símbolos
+  zapiInstance:    'SUA_INSTANCIA',
+  zapiToken:       'SEU_TOKEN',
+  zapiClientToken: 'SEU_CLIENT_TOKEN',
+  managerPhone:    '5511999999999',   // DDI + DDD + número, sem símbolos
 
   // ── URLs do sistema ───────────────────────────────────────────────
   loginUrl:     'botiquim-login.html',
-  confirmarUrl: 'https://botiquim-reservas.vercel.app/confirmar.html',
+  confirmarUrl: 'https://SEU-PROJETO.vercel.app/confirmar.html',
 
   // ── Horários disponíveis para reserva ─────────────────────────────
   horarios: [
