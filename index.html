@@ -6,6 +6,7 @@
 <title>Reservas — Botiquim</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0e0b08;--surface:#181310;--card:#1f1a14;--border:#2e251a;--amber:#d4872a;--amber-light:#e8a94d;--amber-dim:#7a4d18;--cream:#f0e6d3;--muted:#6b5c48;--text:#e8ddd0;--success:#4caf7a}
@@ -104,14 +105,10 @@ footer a{color:var(--amber-dim);text-decoration:none}
 <div class="glow-top"></div>
 
 <script>
-// ── CONFIGURAÇÃO — substitua com seus dados ──────────────
-const SUPABASE_URL      = 'https://cchfqzlshslrmyqhsypq.supabase.co';   // ← Project URL
-const SUPABASE_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzAzMzQsImV4cCI6MjA5MzI0NjMzNH0.EKlr5OtUiur1dyj5gDZ87CZvOkZW1eW1mJoT_ylExQw';                  // ← anon key
-const ZAPI_INSTANCE     = '3F2456FA9E5844335AF19E024201EAF7';               // ← Instance ID Z-API
-const ZAPI_TOKEN        = '01B69918DFC5B413DA0232E4';                   // ← Token Z-API
-const ZAPI_CLIENT_TOKEN = 'Fc670ff75ae0a4e149f08a8cde0ce86e9S';            // ← Client Token Z-API
-const TEL_GERENTE       = '5519981654244';               // ← WhatsApp do gerente
-</script>
+// Configuração carregada de config.js
+const { createClient } = supabase;
+const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
 
 <header>
   <div class="logo-mark">B</div>
@@ -141,7 +138,7 @@ const TEL_GERENTE       = '5519981654244';               // ← WhatsApp do gere
       <div class="field" id="field-data"><label>Data</label><input type="date" id="data"><p class="field-error">Selecione uma data</p></div>
       <div class="field" id="field-horario">
         <label>Horário</label>
-        <select id="horario"><option value="">Selecione</option><option>11:30</option><option>12:00</option><option>12:30</option><option>13:00</option><option>13:30</option><option>14:00</option><option>14:30</option><option>15:00</option><option>15:30</option><option>16:00</option><option>16:30</option><option>17:00</option><option>17:30</option><option>18:00</option><option>18:30</option><option>19:00</option><option>19:30</option><option>20:00</option><option>20:30</option><option>21:00</option><option>21:30</option><option>22:00</option><option>22:30</option><option>23:00</option></select>
+        <select id="horario"><option value="">Selecione</option></select>
         <p class="field-error">Selecione um horário</p>
       </div>
     </div>
@@ -155,7 +152,7 @@ const TEL_GERENTE       = '5519981654244';               // ← WhatsApp do gere
     </div>
     <div class="field" id="field-ocasiao">
       <label>Ocasião</label>
-      <select id="ocasiao"><option value="">Selecione o motivo</option><option>🍽️ Jantar casual</option><option>🎂 Aniversário</option><option>💍 Pedido de casamento</option><option>💑 Encontro romântico</option><option>👥 Reunião de amigos</option><option>💼 Reunião de negócios</option><option>🎉 Comemoração</option><option>👨‍👩‍👧 Almoço em família</option><option>🥳 Happy hour</option><option>🎓 Formatura</option><option>Outro</option></select>
+      <select id="ocasiao"><option value="">Selecione o motivo</option></select>
       <p class="field-error">Selecione a ocasião</p>
     </div>
     <button class="btn-primary" onclick="goToStep(2)">Continuar →</button>
@@ -164,51 +161,13 @@ const TEL_GERENTE       = '5519981654244';               // ← WhatsApp do gere
   <div class="step" id="step-2">
     <p class="step-title">Escolha o ambiente</p>
     <p class="step-desc">Selecione onde prefere ficar e, se quiser, escolha uma mesa.</p>
-    <div class="ambiente-grid">
-      <div class="ambiente-card" onclick="selectAmbiente(this,'Interno')"><div class="ambiente-icon">🪑</div><div class="ambiente-name">Interno</div><div class="ambiente-cap">até 40 pessoas</div></div>
-      <div class="ambiente-card" onclick="selectAmbiente(this,'Mezanino')"><div class="ambiente-icon">🏛️</div><div class="ambiente-name">Mezanino</div><div class="ambiente-cap">até 20 pessoas</div></div>
-    </div>
+    <div class="ambiente-grid" id="ambiente-grid"></div>
     <p class="inline-error" id="error-amb">Selecione um ambiente para continuar</p>
     <div id="map-box" style="display:none">
-      <div class="divider" id="map-divider-label">Mapa — Interno</div>
+      <div class="divider" id="map-divider-label">Mapa</div>
       <div class="map-wrap">
         <div class="map-head"><span class="map-label">Escolha sua mesa</span><div class="map-legend"><div class="leg"><div class="leg-dot free"></div>Livre</div><div class="leg"><div class="leg-dot busy"></div>Ocupada</div><div class="leg"><div class="leg-dot sel"></div>Selecionada</div></div></div>
-        <div id="map-interno">
-          <div class="bar-strip">🍺 Balcão do bar</div>
-          <div class="section-lbl">Salão principal</div>
-          <div class="tables-row">
-            <div class="tbl t2 free" onclick="pickTable(this,'M01')"><span class="tbl-num">01</span><span class="tbl-cap">2 pax</span></div>
-            <div class="tbl t2 free" onclick="pickTable(this,'M02')"><span class="tbl-num">02</span><span class="tbl-cap">2 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'M03')"><span class="tbl-num">03</span><span class="tbl-cap">4 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'M04')"><span class="tbl-num">04</span><span class="tbl-cap">4 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'M05')"><span class="tbl-num">05</span><span class="tbl-cap">4 pax</span></div>
-            <div class="tbl t6 free" onclick="pickTable(this,'M06')"><span class="tbl-num">06</span><span class="tbl-cap">6 pax</span></div>
-          </div>
-          <div class="section-lbl">Fundo</div>
-          <div class="tables-row">
-            <div class="tbl t4 free" onclick="pickTable(this,'M07')"><span class="tbl-num">07</span><span class="tbl-cap">4 pax</span></div>
-            <div class="tbl t6 free" onclick="pickTable(this,'M08')"><span class="tbl-num">08</span><span class="tbl-cap">6 pax</span></div>
-            <div class="tbl t8 free" onclick="pickTable(this,'M09')"><span class="tbl-num">09</span><span class="tbl-cap">8 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'M10')"><span class="tbl-num">10</span><span class="tbl-cap">4 pax</span></div>
-          </div>
-          <div class="entrance">↑ Entrada principal</div>
-        </div>
-        <div id="map-mezanino" style="display:none">
-          <div class="section-lbl">Varanda</div>
-          <div class="tables-row">
-            <div class="tbl t2 free" onclick="pickTable(this,'Z01')"><span class="tbl-num">Z01</span><span class="tbl-cap">2 pax</span></div>
-            <div class="tbl t2 free" onclick="pickTable(this,'Z02')"><span class="tbl-num">Z02</span><span class="tbl-cap">2 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'Z03')"><span class="tbl-num">Z03</span><span class="tbl-cap">4 pax</span></div>
-            <div class="tbl t4 free" onclick="pickTable(this,'Z04')"><span class="tbl-num">Z04</span><span class="tbl-cap">4 pax</span></div>
-          </div>
-          <div class="section-lbl">Área central</div>
-          <div class="tables-row">
-            <div class="tbl t6 free" onclick="pickTable(this,'Z05')"><span class="tbl-num">Z05</span><span class="tbl-cap">6 pax</span></div>
-            <div class="tbl t6 free" onclick="pickTable(this,'Z06')"><span class="tbl-num">Z06</span><span class="tbl-cap">6 pax</span></div>
-            <div class="tbl t8 free" onclick="pickTable(this,'Z07')"><span class="tbl-num">Z07</span><span class="tbl-cap">8 pax</span></div>
-          </div>
-          <div class="entrance">↓ Escada para o mezanino</div>
-        </div>
+        <div id="map-ambientes"></div>
         <p class="map-hint">Sem preferência? Deixe sem selecionar — nossa equipe vai alocar a melhor mesa disponível.</p>
       </div>
     </div>
@@ -260,10 +219,46 @@ const TEL_GERENTE       = '5519981654244';               // ← WhatsApp do gere
 
 <script>
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
 let pessoas = 1, selectedAmbiente = '', selectedMesa = '';
 document.getElementById('data').setAttribute('min', new Date().toISOString().split('T')[0]);
+
+// Popula horários do config
+const horarioSel = document.getElementById('horario');
+CONFIG.horarios.forEach(h => { const o=document.createElement('option');o.value=h;o.textContent=h;horarioSel.appendChild(o); });
+
+// Popula ocasioes do config
+const ocasiaoSel = document.getElementById('ocasiao');
+CONFIG.ocasioes.forEach(oc => { const o=document.createElement('option');o.value=oc;o.textContent=oc;ocasiaoSel.appendChild(o); });
+
+// Gera cards de ambiente e mapas do config
+function buildLayout() {
+  const grid = document.getElementById('ambiente-grid');
+  const maps = document.getElementById('map-ambientes');
+  CONFIG.ambientes.forEach(amb => {
+    const card = document.createElement('div');
+    card.className = 'ambiente-card';
+    card.innerHTML = '<div class="ambiente-icon">'+amb.icon+'</div><div class="ambiente-name">'+amb.nome+'</div><div class="ambiente-cap">ate '+amb.capacidade+' pessoas</div>';
+    card.onclick = () => selectAmbiente(card, amb.nome);
+    grid.appendChild(card);
+    const div = document.createElement('div');
+    div.id = 'map-'+amb.id;
+    div.style.display = 'none';
+    let html = '';
+    amb.secoes.forEach(sec => {
+      html += '<div class="section-lbl">'+sec.nome+'</div><div class="tables-row">';
+      sec.mesas.forEach(m => {
+        const sz = m.capacidade<=2?'t2':m.capacidade<=4?'t4':m.capacidade<=6?'t6':'t8';
+        html += '<div class="tbl '+sz+' free" onclick="pickTable(this,\''+m.id+'\')"><span class="tbl-num">'+m.id+'</span><span class="tbl-cap">'+m.capacidade+' pax</span></div>';
+      });
+      html += '</div>';
+    });
+    div.innerHTML = html;
+    maps.appendChild(div);
+  });
+}
+buildLayout();
 
 function changePessoas(d) {
   pessoas = Math.max(1, Math.min(20, pessoas+d));
@@ -279,15 +274,15 @@ function selectAmbiente(el, nome) {
   document.querySelectorAll('.tbl.selected').forEach(t=>{t.classList.remove('selected');t.classList.add('free');});
   document.getElementById('error-amb').style.display='none';
   document.getElementById('map-box').style.display='block';
-  document.getElementById('map-divider-label').textContent='Mapa — '+nome;
-  document.getElementById('map-interno').style.display=nome==='Interno'?'block':'none';
-  document.getElementById('map-mezanino').style.display=nome==='Mezanino'?'block':'none';
+  document.getElementById('map-divider-label').textContent='Mapa - '+nome;
+  CONFIG.ambientes.forEach(a => { const el2=document.getElementById('map-'+a.id); if(el2)el2.style.display=a.nome===nome?'block':'none'; });
 }
 
 function pickTable(el, id) {
   if(el.classList.contains('busy')) return;
-  const mapId = selectedAmbiente==='Interno'?'map-interno':'map-mezanino';
-  document.querySelectorAll('#'+mapId+' .tbl.selected').forEach(t=>{t.classList.remove('selected');t.classList.add('free');});
+  const amb = CONFIG.ambientes.find(a=>a.nome===selectedAmbiente);
+  if(!amb) return;
+  document.querySelectorAll('#map-'+amb.id+' .tbl.selected').forEach(t=>{t.classList.remove('selected');t.classList.add('free');});
   selectedMesa = selectedMesa===id?'':id;
   if(selectedMesa){el.classList.remove('free');el.classList.add('selected');}
 }
@@ -321,7 +316,7 @@ function fillSummary() {
   document.getElementById('s-pessoas').textContent=pessoas+(pessoas===1?' pessoa':' pessoas');
   document.getElementById('s-ocasiao').textContent=document.getElementById('ocasiao').value;
   document.getElementById('s-ambiente').textContent=selectedAmbiente;
-  document.getElementById('s-mesa').textContent=selectedMesa||'Sem preferência';
+  document.getElementById('s-mesa').textContent=selectedMesa||'Sem preferencia';
   document.getElementById('s-nome').textContent=document.getElementById('nome').value.trim();
   document.getElementById('s-telefone').textContent=document.getElementById('telefone').value.trim();
   const obs=document.getElementById('obs').value.trim();
@@ -333,7 +328,7 @@ function setDots(step) {
   for(let i=1;i<=4;i++){
     const dot=document.getElementById('dot-'+i);
     dot.classList.remove('active','done');
-    if(i<step){dot.classList.add('done');dot.textContent='✓';}
+    if(i<step){dot.classList.add('done');dot.textContent='v';}
     else if(i===step){dot.classList.add('active');dot.textContent=i;}
     else dot.textContent=i;
   }
@@ -351,28 +346,32 @@ function goToStep(n) {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function gerarToken(len) {
+  len = len || 10;
+  return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(b=>(b%36).toString(36)).join('');
+}
+
 async function submitReserva() {
   const btn = document.getElementById('btn-submit');
   btn.disabled=true; btn.textContent='Enviando...';
   try {
     const { data: cod } = await sb.rpc('generate_reservation_id');
     const codigo = cod || 'BOT-'+Math.floor(1000+Math.random()*9000);
+    const token  = gerarToken(10);
     const payload = {
-      id:      codigo,
-      status:  'pending',
-      name:    document.getElementById('nome').value.trim(),
-      phone:   document.getElementById('telefone').value.replace(/\D/g,''),
-      date:    document.getElementById('data').value,
-      time:    document.getElementById('horario').value,
-      people:  pessoas,
-      ambiente: selectedAmbiente,
-      mesa:    selectedMesa || null,
+      id: codigo, status: 'pending', confirm_token: token,
+      name: document.getElementById('nome').value.trim(),
+      phone: document.getElementById('telefone').value.replace(/\D/g,''),
+      date: document.getElementById('data').value,
+      time: document.getElementById('horario').value,
+      people: pessoas, ambiente: selectedAmbiente,
+      mesa: selectedMesa || null,
       ocasiao: document.getElementById('ocasiao').value,
-      obs:     document.getElementById('obs').value.trim() || null,
+      obs: document.getElementById('obs').value.trim() || null,
     };
     const {error} = await sb.from('reservations').insert(payload);
     if(error) throw error;
-    await notificarGerente({...payload, codigo});
+    await notificarGerente(payload, codigo, token);
     document.getElementById('codigo-reserva').textContent = codigo;
     document.querySelector('.progress-wrap').style.display='none';
     document.querySelectorAll('.step').forEach(s=>s.classList.remove('visible'));
@@ -380,17 +379,33 @@ async function submitReserva() {
     window.scrollTo({top:0,behavior:'smooth'});
   } catch(err) {
     console.error(err);
-    btn.disabled=false; btn.textContent='✓ Confirmar reserva';
+    btn.disabled=false; btn.textContent='Confirmar reserva';
     alert('Erro ao enviar reserva. Tente novamente.');
   }
 }
 
-async function notificarGerente(r) {
-  if(!ZAPI_INSTANCE||ZAPI_INSTANCE==='SUA_INSTANCIA'||!TEL_GERENTE) return;
+async function notificarGerente(r, codigo, token) {
+  if(!CONFIG.managerPhone||!CONFIG.zapiInstance||CONFIG.zapiInstance==='SUA_INSTANCIA') return;
   const [y,m,d]=r.date.split('-');
-  const msg=`🔔 *Nova reserva — Botiquim.bar*\n\n👤 *${r.name}*\n📅 ${d}/${m}/${y} às ${r.time}\n👥 ${r.people} ${r.people===1?'pessoa':'pessoas'}\n📍 ${r.ambiente}${r.mesa?' · Mesa '+r.mesa:''}\n🎉 ${r.ocasiao}\n📞 ${r.phone}\n`+(r.obs?`💬 _${r.obs}_\n`:'')+`\n🔑 *${r.codigo}*\n\nAcesse o painel para aprovar.`;
-  const phone='55'+TEL_GERENTE.replace(/\D/g,'').replace(/^55/,'');
-  await fetch(`https://api.z-api.io/instances/${ZAPI_INSTANCE}/token/${ZAPI_TOKEN}/send-text`,{method:'POST',headers:{'Content-Type':'application/json','client-token':ZAPI_CLIENT_TOKEN},body:JSON.stringify({phone,message:msg})}).catch(()=>{});
+  const confirmLink = CONFIG.confirmarUrl+'?id='+codigo+'&token='+token;
+  const msg =
+    '*Nova reserva - '+CONFIG.restaurante+'*\n\n' +
+    'Nome: *'+r.name+'*\n' +
+    'Data: '+d+'/'+m+'/'+y+' as '+r.time+'\n' +
+    'Pessoas: '+r.people+'\n' +
+    'Ambiente: '+r.ambiente+(r.mesa?' - Mesa '+r.mesa:'')+'\n' +
+    'Ocasiao: '+r.ocasiao+'\n' +
+    'Telefone: '+r.phone+'\n' +
+    (r.obs?'Obs: '+r.obs+'\n':'')+
+    'Codigo: *'+codigo+'*\n\n' +
+    'Confirmar agora:\n'+confirmLink+'\n\n' +
+    'Para recusar, acesse o painel.';
+  const phone='55'+CONFIG.managerPhone.replace(/\D/g,'').replace(/^55/,'');
+  try {
+    await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text',
+      {method:'POST',headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken},
+       body:JSON.stringify({phone,message:msg})});
+  } catch(e){}
 }
 </script>
 </body>
