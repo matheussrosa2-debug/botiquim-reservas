@@ -669,11 +669,15 @@ if (typeof CONFIG !== 'undefined') {
     <div class="modal-field"><label class="modal-label">Horário</label><input class="modal-input" type="time" id="me-hora"></div>
     <div class="modal-field"><label class="modal-label">Pessoas</label><input class="modal-input" type="number" id="me-pax" min="1" max="20"></div>
     <div class="modal-field"><label class="modal-label">Ambiente</label>
-      <select class="modal-select" id="me-amb">
+      <select class="modal-select" id="me-amb" onchange="updateEditPrefs()">
         <option>Interno</option><option>Mezanino</option>
       </select>
     </div>
-    <div class="modal-field"><label class="modal-label">Preferência de localização</label><input class="modal-input" type="text" id="me-pref" placeholder="Ex: Perto do palco"></div>
+    <div class="modal-field"><label class="modal-label">Preferência de localização</label>
+      <select class="modal-select" id="me-pref">
+        <option value="">Sem preferência</option>
+      </select>
+    </div>
     <div class="modal-field">
       <label class="modal-label">Notificar cliente sobre alteração?</label>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.2rem">
@@ -1336,15 +1340,63 @@ function openDetail(id) {
 }
 
 // ── EDIT ───────────────────────────────────────────────────────
+function getAmbientesList() {
+  // Try ambientesConfig (from Config tab), fallback to CONFIG.ambientes
+  if (typeof ambientesConfig !== 'undefined' && ambientesConfig.length) return ambientesConfig
+  if (typeof CONFIG !== 'undefined' && CONFIG.ambientes) return CONFIG.ambientes
+  return [{nome:'Interno',preferencias:[]},{nome:'Mezanino',preferencias:[]}]
+}
+
+function updateEditPrefs() {
+  var ambNome = document.getElementById('me-amb').value
+  var prefSel = document.getElementById('me-pref')
+  var curVal  = prefSel.value
+  var ambientes = getAmbientesList()
+  var amb = ambientes.find(function(a){ return a.nome === ambNome })
+  var prefs = amb ? (amb.preferencias || []) : []
+  prefSel.innerHTML = '<option value="">Sem preferência</option>'
+  prefs.forEach(function(p) {
+    var opt = document.createElement('option')
+    opt.value = p; opt.textContent = p
+    if (p === curVal) opt.selected = true
+    prefSel.appendChild(opt)
+  })
+}
+
 function openEdit(id) {
   editId = id
   var r = allReservations.find(function(x){return x.id===id})
-  document.getElementById('me-sub').textContent  = r.name+' · '+r.id
+  document.getElementById('me-sub').textContent = r.name + ' · ' + r.id
   document.getElementById('me-data').value = r.date
   document.getElementById('me-hora').value = r.time
   document.getElementById('me-pax').value  = r.people
-  document.getElementById('me-amb').value  = r.ambiente
-  document.getElementById('me-pref').value = r.preferencia||r.mesa||''
+
+  // Populate ambiente select dynamically
+  var ambSel = document.getElementById('me-amb')
+  var ambientes = getAmbientesList()
+  ambSel.innerHTML = ''
+  ambientes.forEach(function(a) {
+    var opt = document.createElement('option')
+    opt.value = a.nome; opt.textContent = a.icon ? a.icon + ' ' + a.nome : a.nome
+    if (a.nome === r.ambiente) opt.selected = true
+    ambSel.appendChild(opt)
+  })
+
+  // Populate prefs for selected ambiente
+  updateEditPrefs()
+  var curPref = r.preferencia || r.mesa || ''
+  var prefSel = document.getElementById('me-pref')
+  // Try to select current pref
+  for (var i = 0; i < prefSel.options.length; i++) {
+    if (prefSel.options[i].value === curPref) { prefSel.selectedIndex = i; break }
+  }
+  // If not found, add as custom option
+  if (curPref && prefSel.value !== curPref) {
+    var opt = document.createElement('option')
+    opt.value = curPref; opt.textContent = curPref; opt.selected = true
+    prefSel.appendChild(opt)
+  }
+
   openModal('modal-edit')
 }
 
@@ -1357,7 +1409,7 @@ async function saveEdit() {
     time: document.getElementById('me-hora').value,
     people: parseInt(document.getElementById('me-pax').value,10),
     ambiente: document.getElementById('me-amb').value,
-    preferencia: document.getElementById('me-pref').value||null,
+    preferencia: document.getElementById('me-pref').value || null,
     edited_by: currentUser.id, edited_at: new Date().toISOString()
   }
   var { error } = await db.from('reservations').update(updates).eq('id',editId)
@@ -1591,36 +1643,59 @@ function populateCfgForm() {
 }
 
 async function saveCfg() {
+  var btn = document.querySelector('.cfg-save')
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...' }
+
+  // Campos principais — sempre existem na tabela config
   var payload = {
-    restaurante_nome:    document.getElementById('cfg-nome').value.trim(),
-    reserva_min_pessoas: parseInt(document.getElementById('cfg-min-pax')?.value||1, 10),
-    reserva_max_pessoas: parseInt(document.getElementById('cfg-max-pax')?.value||20, 10),
-    reserva_antecedencia: parseInt(document.getElementById('cfg-antecedencia')?.value||0, 10) * 60,
-    funcionamento_inicio: document.getElementById('cfg-func-inicio')?.value||'11:30',
-    funcionamento_fim:    document.getElementById('cfg-func-fim')?.value||'23:00',
-    zapi_instance:       document.getElementById('cfg-zapi-instance').value.trim(),
-    zapi_token:          document.getElementById('cfg-zapi-token').value.trim(),
-    zapi_client_token:   document.getElementById('cfg-zapi-client').value.trim(),
-    site_url:            document.getElementById('cfg-site-url').value.trim(),
-    manager_phone:       '55' + document.getElementById('cfg-mgr-phone').value.replace(/\D/g,'').replace(/^55/,''),
-    owner_phone:         document.getElementById('cfg-owner-phone').value.replace(/\D/g,'') ? '55' + document.getElementById('cfg-owner-phone').value.replace(/\D/g,'').replace(/^55/,'') : '',
-    tpl_confirmacao:     document.getElementById('cfg-tpl-conf').value,
-    tpl_recusa:          document.getElementById('cfg-tpl-rec').value,
-    tpl_lembrete_d1:     document.getElementById('cfg-tpl-d1').value,
-    tpl_lembrete_dia:    document.getElementById('cfg-tpl-dia').value,
-    tpl_evento:          document.getElementById('cfg-tpl-ev').value,
-    lembrete_d1_hora:    document.getElementById('cfg-hora-d1').value,
-    lembrete_dia_hora:   document.getElementById('cfg-hora-dia').value,
-    lembrete_d1_ativo:   document.getElementById('tog-d1').classList.contains('on'),
-    lembrete_dia_ativo:  document.getElementById('tog-dia').classList.contains('on'),
-    updated_at:          new Date().toISOString(),
-    ambientes_config:    cfgData.ambientes_config || null
+    restaurante_nome:  document.getElementById('cfg-nome')?.value.trim() || '',
+    zapi_instance:     document.getElementById('cfg-zapi-instance')?.value.trim() || '',
+    zapi_token:        document.getElementById('cfg-zapi-token')?.value.trim() || '',
+    zapi_client_token: document.getElementById('cfg-zapi-client')?.value.trim() || '',
+    site_url:          document.getElementById('cfg-site-url')?.value.trim() || '',
+    manager_phone:     '55' + (document.getElementById('cfg-mgr-phone')?.value || '').replace(/\D/g,'').replace(/^55/,''),
+    owner_phone:       (document.getElementById('cfg-owner-phone')?.value || '').replace(/\D/g,'') ? '55' + (document.getElementById('cfg-owner-phone')?.value || '').replace(/\D/g,'').replace(/^55/,'') : '',
+    tpl_confirmacao:   document.getElementById('cfg-tpl-conf')?.value || '',
+    tpl_recusa:        document.getElementById('cfg-tpl-rec')?.value || '',
+    tpl_lembrete_d1:   document.getElementById('cfg-tpl-d1')?.value || '',
+    tpl_lembrete_dia:  document.getElementById('cfg-tpl-dia')?.value || '',
+    tpl_evento:        document.getElementById('cfg-tpl-ev')?.value || '',
+    lembrete_d1_hora:  document.getElementById('cfg-hora-d1')?.value || '18:00',
+    lembrete_dia_hora: document.getElementById('cfg-hora-dia')?.value || '10:00',
+    lembrete_d1_ativo: document.getElementById('tog-d1')?.classList.contains('on') || false,
+    lembrete_dia_ativo:document.getElementById('tog-dia')?.classList.contains('on') || false,
+    updated_at:        new Date().toISOString()
   }
-  var { error } = await db.from('config').update(payload).eq('id',1)
-  if(error){showToast('Erro ao salvar','error');return}
-  cfgData = Object.assign(cfgData, payload)
-  showToast('Configurações salvas!','success')
-  if(payload.restaurante_nome) document.getElementById('logo-n').textContent = payload.restaurante_nome
+
+  // Campos opcionais do schema-v3 (podem não existir ainda)
+  var extraFields = {}
+  if (document.getElementById('cfg-min-pax'))     extraFields.reserva_min_pessoas  = parseInt(document.getElementById('cfg-min-pax').value||1, 10)
+  if (document.getElementById('cfg-max-pax'))     extraFields.reserva_max_pessoas  = parseInt(document.getElementById('cfg-max-pax').value||20, 10)
+  if (document.getElementById('cfg-antecedencia'))extraFields.reserva_antecedencia = parseInt(document.getElementById('cfg-antecedencia').value||0, 10) * 60
+  if (document.getElementById('cfg-func-inicio')) extraFields.funcionamento_inicio = document.getElementById('cfg-func-inicio').value || '11:30'
+  if (document.getElementById('cfg-func-fim'))    extraFields.funcionamento_fim    = document.getElementById('cfg-func-fim').value || '23:00'
+  if (cfgData.ambientes_config)                   extraFields.ambientes_config     = cfgData.ambientes_config
+
+  // Tenta salvar tudo junto
+  var fullPayload = Object.assign({}, payload, extraFields)
+  var result = await db.from('config').update(fullPayload).eq('id',1)
+
+  if (result.error) {
+    console.warn('Save completo falhou:', result.error.message, '— tentando só campos principais')
+    // Fallback: salva só os campos principais
+    result = await db.from('config').update(payload).eq('id',1)
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar todas as configurações' }
+
+  if (result.error) {
+    console.error('Erro ao salvar config:', result.error)
+    showToast('Erro: ' + result.error.message, 'error')
+    return
+  }
+
+  cfgData = Object.assign(cfgData, fullPayload)
+  showToast('✓ Configurações salvas com sucesso!', 'success')
 }
 
 function previewTpl(fieldId, prevId) {
