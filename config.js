@@ -20,7 +20,7 @@ const CONFIG = {
   zapiInstance:    '3F2AFB4F231B31FD9BCFAAA33AE3F93B',
   zapiToken:       '76A569730EF10D755ECDA7FD',
   zapiClientToken: 'Fec6a417df95a4c30a74f7dcca17a92a4S',
-  managerPhone:    '5519982191097',   // DDI + DDD + número, sem símbolos
+  managerPhone:    '5519996618173',   // DDI + DDD + número, sem símbolos
 
   // ── URLs do sistema ───────────────────────────────────────────────
   loginUrl:     'botiquim-login.html',
