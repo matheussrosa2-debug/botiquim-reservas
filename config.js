@@ -24,7 +24,7 @@ const CONFIG = {
 
   // ── URLs do sistema ───────────────────────────────────────────────
   loginUrl:     'botiquim-login.html',
-  confirmarUrl: 'https://SEU-PROJETO.vercel.app/confirmar.html',
+  confirmarUrl: 'confirmarUrl: 'https://botiquim-reservas.vercel.app/confirmar.html',',
 
   // ── Horários disponíveis para reserva ─────────────────────────────
   horarios: [
