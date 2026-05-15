@@ -17,10 +17,10 @@ const CONFIG = {
   supabaseService: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaGZxemxzaHNscm15cWhzeXBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY3MDMzNCwiZXhwIjoyMDkzMjQ2MzM0fQ.SWm-c27yY5hj2c51NuaUqKBB-wSMWqqm5y0FKKmTZ4A',      // service_role key (só no painel)
 
   // ── Z-API WhatsApp ────────────────────────────────────────────────
-  zapiInstance:    'SUA_INSTANCIA',
-  zapiToken:       'SEU_TOKEN',
-  zapiClientToken: 'SEU_CLIENT_TOKEN',
-  managerPhone:    '5511999999999',   // DDI + DDD + número, sem símbolos
+  zapiInstance:    '3F2AFB4F231B31FD9BCFAAA33AE3F93B',
+  zapiToken:       '76A569730EF10D755ECDA7FD',
+  zapiClientToken: 'Fec6a417df95a4c30a74f7dcca17a92a4S',
+  managerPhone:    '5519982191097',   // DDI + DDD + número, sem símbolos
 
   // ── URLs do sistema ───────────────────────────────────────────────
   loginUrl:     'botiquim-login.html',
