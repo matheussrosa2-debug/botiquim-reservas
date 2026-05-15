@@ -285,6 +285,7 @@ async function loadReservaConfig() {
     }
   } catch(e) {}
 }
+// Config carregada na inicialização — e novamente antes de cada envio
 loadReservaConfig();
 
 // Populate from config.js
@@ -415,6 +416,8 @@ function gerarToken(){var c='abcdefghijklmnopqrstuvwxyz0123456789',r='';for(var 
 async function submitReserva() {
   var btn=document.getElementById('btn-submit');
   btn.disabled=true;btn.textContent='Enviando...';
+  // Garante que a config do banco foi carregada antes de enviar
+  await loadReservaConfig();
   var codigo=gerarCodigo(),token=gerarToken();
   var payload={
     id:codigo,status:'pending',confirm_token:token,
