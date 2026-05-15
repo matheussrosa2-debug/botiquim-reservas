@@ -1658,27 +1658,34 @@ function loadAmbientesConfig() {
 function renderAmbientesConfig() {
   var list = document.getElementById('amb-config-list')
   if (!list) return
-  list.innerHTML = ambientesConfig.map(function(amb, idx) {
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem">' +
-      '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">' +
-        '<input style="width:40px;font-size:1.1rem;text-align:center;border:2px solid var(--border);border-radius:6px;padding:0.4rem;background:var(--card);outline:none" value="'+amb.icon+'" onchange="updateAmb('+idx+','icon',this.value)" maxlength="2">' +
-        '<input class="cfg-input" style="flex:1;min-width:120px" value="'+amb.nome+'" placeholder="Nome do ambiente" onchange="updateAmb('+idx+','nome',this.value)">' +
-        '<input class="cfg-input" style="width:90px" type="number" value="'+amb.capacidade+'" placeholder="Cap." title="Capacidade máxima de pessoas" onchange="updateAmb('+idx+','capacidade',parseInt(this.value))">' +
-        (ambientesConfig.length > 1 ? '<button onclick="removeAmb('+idx+')" style="background:none;border:1px solid var(--red-border);color:var(--red);border-radius:6px;padding:0.35rem 0.65rem;cursor:pointer;font-size:0.72rem;flex-shrink:0">Remover</button>' : '') +
-      '</div>' +
-      '<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:0.5rem">Opções de preferência de localização</div>' +
-      '<div>' +
-        amb.preferencias.map(function(p, pi) {
-          return '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem">' +
-            '<input class="cfg-input" style="flex:1" value="'+p+'" placeholder="Ex: Perto do palco" onchange="updatePref('+idx+','+pi+',this.value)">' +
-            (amb.preferencias.length > 1 ? '<button onclick="removePref('+idx+','+pi+')" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.75rem;flex-shrink:0">✕</button>' : '') +
-          '</div>'
-        }).join('') +
-      '</div>' +
-      '<button onclick="addPref('+idx+')" style="background:none;border:1px dashed var(--border2);color:var(--muted);border-radius:6px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.72rem;margin-top:0.25rem;width:100%;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border2)'">+ Adicionar opção</button>' +
-    '</div>'
-  }).join('')
+  var html = ''
+  ambientesConfig.forEach(function(amb, idx) {
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem">'
+    // Header row: icon, name, capacity, remove
+    html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">'
+    html += '<input data-idx="'+idx+'" data-key="icon" style="width:40px;font-size:1.1rem;text-align:center;border:2px solid var(--border);border-radius:6px;padding:0.4rem;background:var(--card);outline:none" value="'+amb.icon+'" maxlength="2" onchange="updateAmb('+idx+','icon',this.value)">'
+    html += '<input data-idx="'+idx+'" data-key="nome" class="cfg-input" style="flex:1;min-width:120px" value="'+amb.nome+'" placeholder="Nome do ambiente" onchange="updateAmb('+idx+','nome',this.value)">'
+    html += '<input data-idx="'+idx+'" data-key="capacidade" class="cfg-input" style="width:80px" type="number" value="'+amb.capacidade+'" title="Capacidade" onchange="updateAmb('+idx+','capacidade',parseInt(this.value))">'
+    if (ambientesConfig.length > 1) {
+      html += '<button onclick="removeAmb('+idx+')" style="background:none;border:1px solid var(--red-border);color:var(--red);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.72rem;flex-shrink:0">Remover</button>'
+    }
+    html += '</div>'
+    // Preferences
+    html += '<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:0.5rem">Preferências de localização</div>'
+    amb.preferencias.forEach(function(p, pi) {
+      html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem">'
+      html += '<input class="cfg-input" style="flex:1" value="'+p+'" placeholder="Ex: Perto do palco" onchange="updatePref('+idx+','+pi+',this.value)">'
+      if (amb.preferencias.length > 1) {
+        html += '<button onclick="removePref('+idx+','+pi+')" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.75rem;flex-shrink:0">✕</button>'
+      }
+      html += '</div>'
+    })
+    html += '<button onclick="addPref('+idx+')" style="background:none;border:1px dashed var(--border2);color:var(--muted);border-radius:6px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.72rem;margin-top:0.25rem;width:100%">+ Adicionar opção de preferência</button>'
+    html += '</div>'
+  })
+  list.innerHTML = html
 }
+
 
 function updateAmb(idx, key, val) { ambientesConfig[idx][key] = val }
 function removeAmb(idx) { if(ambientesConfig.length>1){ambientesConfig.splice(idx,1); renderAmbientesConfig()} }
