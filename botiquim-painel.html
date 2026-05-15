@@ -1659,31 +1659,47 @@ function renderAmbientesConfig() {
   var list = document.getElementById('amb-config-list')
   if (!list) return
   var html = ''
-  ambientesConfig.forEach(function(amb, idx) {
+  for (var idx = 0; idx < ambientesConfig.length; idx++) {
+    var amb = ambientesConfig[idx]
     html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem">'
-    // Header row: icon, name, capacity, remove
     html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">'
-    html += '<input data-idx="'+idx+'" data-key="icon" style="width:40px;font-size:1.1rem;text-align:center;border:2px solid var(--border);border-radius:6px;padding:0.4rem;background:var(--card);outline:none" value="'+amb.icon+'" maxlength="2" onchange="updateAmb('+idx+','icon',this.value)">'
-    html += '<input data-idx="'+idx+'" data-key="nome" class="cfg-input" style="flex:1;min-width:120px" value="'+amb.nome+'" placeholder="Nome do ambiente" onchange="updateAmb('+idx+','nome',this.value)">'
-    html += '<input data-idx="'+idx+'" data-key="capacidade" class="cfg-input" style="width:80px" type="number" value="'+amb.capacidade+'" title="Capacidade" onchange="updateAmb('+idx+','capacidade',parseInt(this.value))">'
+    html += '<input class="amb-inp" data-idx="' + idx + '" data-key="icon" style="width:40px;font-size:1.1rem;text-align:center;border:2px solid var(--border);border-radius:6px;padding:0.4rem;background:var(--card);outline:none;cursor:text" value="' + amb.icon + '" maxlength="2">'
+    html += '<input class="amb-inp cfg-input" data-idx="' + idx + '" data-key="nome" style="flex:1;min-width:120px" value="' + amb.nome + '" placeholder="Nome do ambiente">'
+    html += '<input class="amb-inp cfg-input" data-idx="' + idx + '" data-key="capacidade" style="width:80px" type="number" value="' + amb.capacidade + '" title="Capacidade maxima">'
     if (ambientesConfig.length > 1) {
-      html += '<button onclick="removeAmb('+idx+')" style="background:none;border:1px solid var(--red-border);color:var(--red);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.72rem;flex-shrink:0">Remover</button>'
+      html += '<button onclick="removeAmb(' + idx + ')" style="background:none;border:1px solid var(--red-border);color:var(--red);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.72rem;flex-shrink:0">Remover</button>'
     }
     html += '</div>'
-    // Preferences
-    html += '<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:0.5rem">Preferências de localização</div>'
-    amb.preferencias.forEach(function(p, pi) {
+    html += '<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:0.5rem">Preferencias de localizacao</div>'
+    for (var pi = 0; pi < amb.preferencias.length; pi++) {
+      var p = amb.preferencias[pi]
       html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem">'
-      html += '<input class="cfg-input" style="flex:1" value="'+p+'" placeholder="Ex: Perto do palco" onchange="updatePref('+idx+','+pi+',this.value)">'
+      html += '<input class="pref-inp cfg-input" data-ai="' + idx + '" data-pi="' + pi + '" style="flex:1" value="' + p + '" placeholder="Ex: Perto do palco">'
       if (amb.preferencias.length > 1) {
-        html += '<button onclick="removePref('+idx+','+pi+')" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.75rem;flex-shrink:0">✕</button>'
+        html += '<button onclick="removePref(' + idx + ',' + pi + ')" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.75rem;flex-shrink:0">x</button>'
       }
       html += '</div>'
-    })
-    html += '<button onclick="addPref('+idx+')" style="background:none;border:1px dashed var(--border2);color:var(--muted);border-radius:6px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.72rem;margin-top:0.25rem;width:100%">+ Adicionar opção de preferência</button>'
+    }
+    html += '<button onclick="addPref(' + idx + ')" style="background:none;border:1px dashed var(--border2);color:var(--muted);border-radius:6px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.72rem;margin-top:0.25rem;width:100%">+ Adicionar opcao</button>'
     html += '</div>'
-  })
+  }
   list.innerHTML = html
+  // Bind change events after render (avoids inline quote issues)
+  list.querySelectorAll('.amb-inp').forEach(function(el) {
+    el.addEventListener('change', function() {
+      var i = parseInt(this.dataset.idx)
+      var k = this.dataset.key
+      var v = k === 'capacidade' ? parseInt(this.value) : this.value
+      ambientesConfig[i][k] = v
+    })
+  })
+  list.querySelectorAll('.pref-inp').forEach(function(el) {
+    el.addEventListener('change', function() {
+      var ai = parseInt(this.dataset.ai)
+      var pi = parseInt(this.dataset.pi)
+      ambientesConfig[ai].preferencias[pi] = this.value
+    })
+  })
 }
 
 
