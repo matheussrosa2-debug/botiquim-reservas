@@ -64,6 +64,21 @@ const { createClient } = supabase
 const db = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey)
 // Logo loaded from image
 
+// Carrega credenciais do banco antes de confirmar
+async function loadCfgFromDB() {
+  try {
+    var r = await db.from('config').select(
+      'zapi_instance, zapi_token, zapi_client_token, restaurante_nome'
+    ).eq('id',1).single()
+    if (r.data) {
+      if (r.data.zapi_instance)     CONFIG.zapiInstance    = r.data.zapi_instance
+      if (r.data.zapi_token)        CONFIG.zapiToken       = r.data.zapi_token
+      if (r.data.zapi_client_token) CONFIG.zapiClientToken = r.data.zapi_client_token
+      if (r.data.restaurante_nome)  CONFIG.restaurante     = r.data.restaurante_nome
+    }
+  } catch(e) {}
+}
+
 async function run() {
   const p = new URLSearchParams(window.location.search)
   const id = p.get('id'), token = p.get('token')
