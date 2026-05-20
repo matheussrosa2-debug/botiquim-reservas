@@ -1489,7 +1489,7 @@ async function loadEvents() {
   list.innerHTML = evs.map(function(e){
     var rec = e.recorrencia==='semanal'?'Todo '+DIAS_SEM[e.dia_semana]:e.recorrencia==='mensal'?'Todo dia '+e.dia_mes:fmtDate(e.data_unica)
     return '<div class="ev-card">'+
-      (e.flyer_url?'<img class="ev-flyer" src="'+e.flyer_url+'" onerror="this.style.display=\'none\'">':'')+
+      (e.flyer_url?'<img class="ev-flyer" src="'+e.flyer_url+'" style="background:var(--card2)">':'')+
       '<div class="ev-info"><div class="ev-nome">'+e.nome+'</div><div class="ev-rec">'+rec+(e.horario?' às '+e.horario:'')+'</div>'+(e.descricao?'<div style="font-size:0.7rem;color:var(--muted);margin-top:0.2rem">'+e.descricao+'</div>':'')+' </div>'+
       '<div class="ev-acts">'+
         '<div class="ev-badge '+(e.ativo?'ativo':'inativo')+'">'+(e.ativo?'Ativo':'Inativo')+'</div>'+
@@ -2048,7 +2048,7 @@ function renderMapImgFields() {
     html += '<div class="cfg-field" style="margin-bottom:0.75rem">'
     html += '<label class="cfg-label">'+amb.icon+' '+amb.nome+'</label>'
     html += '<input class="cfg-input" id="cfg-mapimg-'+amb.id+'" value="'+cur+'" placeholder="https://raw.githubusercontent.com/...">'
-    if (cur) { html += '<img src="'+cur+'" style="margin-top:0.5rem;width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" onerror="this.style.display='none'">' }
+    if (cur) { html += '<img src="'+cur+'" style="margin-top:0.5rem;width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)">' }
     html += '</div>'
   })
   el.innerHTML = html
