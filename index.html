@@ -287,6 +287,9 @@ async function loadReservaConfig() {
 }
 // Config carregada na inicialização — e novamente antes de cada envio
 loadReservaConfig();
+loadAmbientesFromDB();
+
+// Carrega ambientes do banco (após todas as declarações)
 
 // Populate from config.js
 var horarioSel = document.getElementById('horario');
@@ -360,8 +363,7 @@ function buildLayout() {
     grid.appendChild(card);
   });
 }
-buildLayout();
-
+// buildLayout é chamado dentro de loadAmbientesFromDB
 function changePessoas(d) {
   pessoas = Math.max(MIN_PAX, Math.min(MAX_PAX, pessoas+d));
   document.getElementById('pessoas-num').textContent = pessoas;
