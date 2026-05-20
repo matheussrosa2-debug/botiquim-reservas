@@ -274,16 +274,25 @@ document.getElementById('data').setAttribute('min', new Date().toISOString().spl
 // Load dynamic config
 async function loadReservaConfig() {
   try {
-    var r = await sb.from('config').select('reserva_min_pessoas,reserva_max_pessoas').eq('id',1).single()
+    var r = await sb.from('config').select(
+      'reserva_min_pessoas,reserva_max_pessoas,manager_phone,zapi_instance,zapi_token,zapi_client_token,site_url,group_id'
+    ).eq('id',1).single()
     if (r.data) {
-      MIN_PAX = r.data.reserva_min_pessoas || 1
-      MAX_PAX = r.data.reserva_max_pessoas || 20
+      var d = r.data
+      MIN_PAX = d.reserva_min_pessoas || 1
+      MAX_PAX = d.reserva_max_pessoas || 20
       pessoas = MIN_PAX
       document.getElementById('pessoas-num').textContent = MIN_PAX
       document.getElementById('btn-minus').disabled = true
       document.getElementById('btn-plus').disabled = MIN_PAX >= MAX_PAX
+      if (d.manager_phone)    CONFIG.managerPhone    = d.manager_phone
+      if (d.zapi_instance)    CONFIG.zapiInstance    = d.zapi_instance
+      if (d.zapi_token)       CONFIG.zapiToken       = d.zapi_token
+      if (d.zapi_client_token)CONFIG.zapiClientToken = d.zapi_client_token
+      if (d.site_url)         CONFIG.confirmarUrl    = d.site_url + '/confirmar.html'
+      if (d.group_id)         CONFIG.groupId         = d.group_id
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadReservaConfig error:', e) }
 }
 // Config carregada na inicialização — e novamente antes de cada envio
 loadReservaConfig();
