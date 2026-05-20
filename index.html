@@ -299,11 +299,16 @@ var PREFS = {}; // carregado do banco em loadAmbientesFromDB
 if (CONFIG.preferencias) Object.assign(PREFS, CONFIG.preferencias);
 var AMBIENTES_LIST = []; // carregado do banco
 
+// Defaults hardcoded como último fallback
+var DEFAULT_AMBIENTES = [
+  { id:'interno',  nome:'Interno',  icon:'🪑', capacidade:40, preferencias:['Perto do palco','Perto do brinquedo','Perto da porta','Área central','Sem preferência'] },
+  { id:'mezanino', nome:'Mezanino', icon:'🏛️', capacidade:20, preferencias:['Varanda','Sem preferência'] }
+];
+
 async function loadAmbientesFromDB() {
   try {
     var r = await sb.from('config').select('ambientes_config,reserva_min_pessoas,reserva_max_pessoas').eq('id',1).single();
     if (r.data) {
-      // Limites de pessoas
       if (r.data.reserva_min_pessoas) {
         MIN_PAX = r.data.reserva_min_pessoas;
         MAX_PAX = r.data.reserva_max_pessoas || 20;
@@ -312,28 +317,33 @@ async function loadAmbientesFromDB() {
         document.getElementById('btn-minus').disabled = true;
         document.getElementById('btn-plus').disabled = MIN_PAX >= MAX_PAX;
       }
-      // Ambientes e preferências
       if (r.data.ambientes_config) {
-        var saved = JSON.parse(r.data.ambientes_config);
-        if (saved && saved.length) {
-          AMBIENTES_LIST = saved;
-          PREFS = {};
-          saved.forEach(function(a) {
-            if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias;
-          });
-        }
+        try {
+          var saved = JSON.parse(r.data.ambientes_config);
+          if (saved && saved.length) {
+            AMBIENTES_LIST = saved;
+            PREFS = {};
+            saved.forEach(function(a) {
+              if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias;
+            });
+          }
+        } catch(pe) { console.warn('ambientes_config parse error:', pe) }
       }
     }
   } catch(e) { console.warn('loadAmbientesFromDB error:', e) }
 
-  // Se banco não retornou nada, usa config.js como fallback
+  // Fallback 1: config.js
   if (!AMBIENTES_LIST.length && CONFIG.ambientes && CONFIG.ambientes.length) {
-    AMBIENTES_LIST = CONFIG.ambientes.map(function(a) {
-      return { id: a.id, nome: a.nome, icon: a.icon, capacidade: a.capacidade, preferencias: a.preferencias || [] }
+    CONFIG.ambientes.forEach(function(a) {
+      AMBIENTES_LIST.push({ id:a.id, nome:a.nome, icon:a.icon, capacidade:a.capacidade, preferencias:a.preferencias||[] })
+      if (a.preferencias) PREFS[a.nome] = a.preferencias
     })
-    AMBIENTES_LIST.forEach(function(a) {
-      if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias
-    })
+  }
+
+  // Fallback 2: hardcoded
+  if (!AMBIENTES_LIST.length) {
+    AMBIENTES_LIST = DEFAULT_AMBIENTES.slice()
+    DEFAULT_AMBIENTES.forEach(function(a) { PREFS[a.nome] = a.preferencias })
   }
 
   buildLayout();
