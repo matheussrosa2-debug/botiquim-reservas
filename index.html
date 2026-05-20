@@ -325,7 +325,17 @@ async function loadAmbientesFromDB() {
       }
     }
   } catch(e) { console.warn('loadAmbientesFromDB error:', e) }
-  // Só monta o layout depois que o banco respondeu
+
+  // Se banco não retornou nada, usa config.js como fallback
+  if (!AMBIENTES_LIST.length && CONFIG.ambientes && CONFIG.ambientes.length) {
+    AMBIENTES_LIST = CONFIG.ambientes.map(function(a) {
+      return { id: a.id, nome: a.nome, icon: a.icon, capacidade: a.capacidade, preferencias: a.preferencias || [] }
+    })
+    AMBIENTES_LIST.forEach(function(a) {
+      if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias
+    })
+  }
+
   buildLayout();
 }
 
