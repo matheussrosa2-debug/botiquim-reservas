@@ -295,28 +295,37 @@ var ocasiaoSel = document.getElementById('ocasiao');
 CONFIG.ocasioes.forEach(function(oc){var o=document.createElement('option');o.value=oc;o.textContent=oc;ocasiaoSel.appendChild(o);});
 
 // Preferences per ambiente
-var PREFS = { 'Interno':['Perto do palco','Perto do brinquedo','Perto da porta','Área central','Sem preferência'], 'Mezanino':['Varanda','Do lado do guarda-corpo','Sem preferência'] };
+var PREFS = {}; // carregado do banco em loadAmbientesFromDB
 if (CONFIG.preferencias) Object.assign(PREFS, CONFIG.preferencias);
-var AMBIENTES_LIST = CONFIG.ambientes ? JSON.parse(JSON.stringify(CONFIG.ambientes)) : [];
+var AMBIENTES_LIST = []; // carregado do banco
 
 async function loadAmbientesFromDB() {
   try {
-    var r = await sb.from('config').select('ambientes_config').eq('id',1).single();
-    if (r.data && r.data.ambientes_config) {
-      var saved = JSON.parse(r.data.ambientes_config);
-      if (saved && saved.length) {
-        // Sobrescreve completamente o AMBIENTES_LIST com o que está no banco
-        AMBIENTES_LIST = saved;
-        // Reconstrói PREFS a partir do banco
-        PREFS = {};
-        saved.forEach(function(a) {
-          if (a.preferencias && a.preferencias.length) {
-            PREFS[a.nome] = a.preferencias;
-          }
-        });
+    var r = await sb.from('config').select('ambientes_config,reserva_min_pessoas,reserva_max_pessoas').eq('id',1).single();
+    if (r.data) {
+      // Limites de pessoas
+      if (r.data.reserva_min_pessoas) {
+        MIN_PAX = r.data.reserva_min_pessoas;
+        MAX_PAX = r.data.reserva_max_pessoas || 20;
+        pessoas = MIN_PAX;
+        document.getElementById('pessoas-num').textContent = MIN_PAX;
+        document.getElementById('btn-minus').disabled = true;
+        document.getElementById('btn-plus').disabled = MIN_PAX >= MAX_PAX;
+      }
+      // Ambientes e preferências
+      if (r.data.ambientes_config) {
+        var saved = JSON.parse(r.data.ambientes_config);
+        if (saved && saved.length) {
+          AMBIENTES_LIST = saved;
+          PREFS = {};
+          saved.forEach(function(a) {
+            if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias;
+          });
+        }
       }
     }
   } catch(e) { console.warn('loadAmbientesFromDB error:', e) }
+  // Só monta o layout depois que o banco respondeu
   buildLayout();
 }
 
