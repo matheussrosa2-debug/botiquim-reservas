@@ -187,6 +187,29 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .tbtn{padding:0.25rem 0.55rem;border-radius:5px;font-size:0.68rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;border:1px solid var(--border2);background:none;color:var(--muted)}
 .tbtn:hover{border-color:var(--amber-dim);color:var(--amber)}
 .tbtn.danger:hover{border-color:var(--red-border);color:#e07070}
+/* TEAM TABLE */
+.team-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:11px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow)}
+.team-table th{font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0.75rem 1rem;text-align:left;border-bottom:1px solid var(--border);background:var(--surface)}
+.team-table td{padding:0.875rem 1rem;border-bottom:1px solid var(--border);font-size:0.82rem;color:var(--text);vertical-align:middle}
+.team-table tr:last-child td{border-bottom:none}
+.team-table tr:hover td{background:var(--surface)}
+.team-td-name{font-weight:500;color:var(--dark)}
+.team-td-user{color:var(--muted);font-size:0.75rem;font-family:monospace}
+.team-td-access{font-size:0.72rem;color:var(--muted)}
+.tlevel{display:inline-block;padding:0.18rem 0.55rem;border-radius:20px;font-size:0.68rem;font-weight:600;letter-spacing:0.04em}
+.tlevel.master{background:var(--primary-dim);color:var(--primary);border:1px solid rgba(196,30,30,0.2)}
+.tlevel.admin{background:var(--gold-dim);color:#a07830;border:1px solid var(--gold-border)}
+.tlevel.gerente{background:var(--blue-bg);color:#2a6090;border:1px solid var(--blue-border)}
+.tlevel.staff{background:var(--green-bg);color:#2E7D52;border:1px solid var(--green-border)}
+.tstatus{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:500}
+.tstatus.active{color:#2E7D52}.tstatus.inactive{color:var(--red)}
+.tstatus::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.tact-btn{background:none;border:none;font-size:0.75rem;font-weight:500;cursor:pointer;padding:0.2rem 0.4rem;border-radius:4px;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.tact-edit{color:var(--muted)}.tact-edit:hover{color:var(--dark);background:var(--surface)}
+.tact-disable{color:var(--red)}.tact-disable:hover{background:var(--red-bg)}
+.tact-enable{color:var(--green)}.tact-enable:hover{background:var(--green-bg)}
+.tact-pwd{color:var(--gold)}.tact-pwd:hover{background:var(--gold-dim)}
+
 /* PERMISSÕES */
 .perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem;margin-top:0.875rem}
 .perm-item{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:0.6rem 0.75rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem}
