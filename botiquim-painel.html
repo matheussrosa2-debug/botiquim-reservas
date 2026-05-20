@@ -1570,53 +1570,66 @@ async function toggleEvent(id, cur) {
 // ── ACCESS ─────────────────────────────────────────────────────
 async function loadTeam() {
   var { data } = await db.from('profiles').select('*').order('created_at')
-  var list = document.getElementById('team-list')
-  var members = data||[]
-  if(!members.length){list.innerHTML='<div class="empty">Nenhum membro.</div>';return}
-  list.innerHTML = members.map(function(m){
-    var isYou = m.id===currentUser?.id
-    var ini = (m.name||'?').charAt(0).toUpperCase()
-    var roleLabel = {master:'Master',admin:'Admin',gerente:'Gerente',staff:'Staff'}[m.role]||m.role
-    return '<div class="team-card">'+
-      '<div class="t-avatar">'+ini+'</div>'+
-      '<div class="t-info">'+
-        '<div class="t-name">'+( m.name||'—')+(isYou?' <span class="you-tag">(você)</span>':'')+' </div>'+
-        '<div class="t-email">'+(m.email||'—')+'</div>'+
-        '<div class="t-badges"><div class="role-chip '+m.role+'">'+roleLabel+'</div><div class="t-dot '+(m.active?'active':'inactive')+'"></div><span style="font-size:0.65rem;color:var(--muted)">'+(m.active?'Ativo':'Inativo')+'</span></div>'+
-      '</div>'+
-      (!isYou?'<div class="t-acts">'+(currentRole==="master"?'<button class="tbtn" onclick="openResetPwd(\''+m.id+'\',\''+m.name+'\')" style="border-color:var(--gold);color:var(--gold)">🔑 Senha</button>':'')+
-        '<button class="tbtn" onclick="changeRole(\''+m.id+'\',\''+m.role+'\')">Mudar nível</button><button class="tbtn danger" onclick="toggleMember(\''+m.id+'\','+m.active+')">'+(m.active?'Desativar':'Ativar')+'</button></div>':'')+
-    '</div>'
-  }).join('')
+  var el = document.getElementById('team-list')
+  var members = data || []
+  if (!members.length) { el.innerHTML = '<div class="empty">Nenhum membro.</div>'; return }
 
-  if (currentRole === 'master') {
-    document.getElementById('perm-section').style.display = 'block'
-    renderPerms()
+  window._teamMembers = members
+  var isMaster = currentRole === 'master'
+  var now = new Date()
+
+  function ago(ts) {
+    if (!ts) return 'Nunca'
+    var d = new Date(ts), diff = now - d
+    if (diff < 60000) return 'Agora'
+    if (diff < 3600000) return Math.floor(diff/60000) + 'min'
+    return d.getDate() + '/' + (d.getMonth()+1) + ', ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2)
   }
+
+  var RLBL = { master:'Master', admin:'Admin', gerente:'Gestor', staff:'Funcionario' }
+
+  var rows = ''
+  for (var i = 0; i < members.length; i++) {
+    var m = members[i]
+    var me = m.id === (currentUser && currentUser.id)
+    var role = m.role || 'staff'
+    var active = m.active !== false
+    var uname = (m.email||'').split('@')[0]
+
+    var acts = ''
+    if (!me) {
+      if (isMaster) acts += '<button class="tact-btn tact-pwd" data-i="'+i+'" onclick="openResetPwdIdx(this.dataset.i)">Senha</button> '
+      acts += '<button class="tact-btn tact-edit" data-i="'+i+'" onclick="changRoleIdx(this.dataset.i)">Editar nivel</button> '
+      acts += '<button class="tact-btn '+(active?'tact-disable':'tact-enable')+'" data-i="'+i+'" onclick="togMemberIdx(this.dataset.i)">'+(active?'Desativar':'Ativar')+'</button>'
+    } else {
+      acts = '<span style="font-size:0.68rem;color:var(--muted);font-style:italic">voce</span>'
+    }
+
+    rows += '<tr>'
+    rows += '<td><b style="font-size:0.85rem;color:var(--dark)">'+(m.name||'-')+'</b></td>'
+    rows += '<td style="font-size:0.75rem;color:var(--muted);font-family:monospace">'+uname+'</td>'
+    rows += '<td><span class="tlevel '+role+'">'+(RLBL[role]||role)+'</span></td>'
+    rows += '<td><span class="tstatus '+(active?'active':'inactive')+'">'+(active?'Ativo':'Inativo')+'</span></td>'
+    rows += '<td style="font-size:0.72rem;color:var(--muted)">'+ago(m.last_sign_in_at||m.updated_at)+'</td>'
+    rows += '<td style="text-align:right;white-space:nowrap">'+acts+'</td>'
+    rows += '</tr>'
+  }
+
+  el.innerHTML = '<table class="team-table"><thead><tr>' +
+    '<th>Nome</th><th>Usuario</th><th>Nivel</th><th>Status</th><th>Ultimo acesso</th><th></th>' +
+    '</tr></thead><tbody>'+rows+'</tbody></table>'
 }
 
-function renderPerms() {
-  var roles = ['admin','gerente','staff']
-  var labels = {admin:'Admin',gerente:'Gerente',staff:'Staff'}
-  document.getElementById('perm-roles').innerHTML = roles.map(function(role){
-    var p = permsData[role]||{}
-    var items = Object.keys(PERM_LABELS).map(function(k){
-      var on = p[k]===true
-      return '<div class="perm-item">'+
-        '<span class="perm-label">'+PERM_LABELS[k]+'</span>'+
-        '<button class="perm-toggle '+(on?'on':'off')+'" data-role="'+role+'" data-key="'+k+'" onclick="togglePerm(this)"></button>'+
-      '</div>'
-    }).join('')
-    return '<div class="role-section"><div class="role-section-title">'+labels[role]+'</div><div class="perm-grid">'+items+'</div></div>'
-  }).join('')
+function openResetPwdIdx(i) { var m = window._teamMembers[parseInt(i)]; if(m) openResetPwd(m.id, m.name||m.email) }
+function changRoleIdx(i)    { var m = window._teamMembers[parseInt(i)]; if(m) changeRole(m.id, m.role||'staff') }
+function togMemberIdx(i)    { var m = window._teamMembers[parseInt(i)]; if(m) toggleMember(m.id, m.active!==false) }
+
+
+function openResetPwdIdx(idx) {
+  var m = window._teamMembers && window._teamMembers[parseInt(idx)]
+  if (m) openResetPwd(m.id, m.name || m.email)
 }
 
-function togglePerm(btn) {
-  var role = btn.dataset.role, key = btn.dataset.key
-  if (!permsData[role]) permsData[role] = {}
-  permsData[role][key] = !permsData[role][key]
-  btn.className = 'perm-toggle ' + (permsData[role][key]?'on':'off')
-}
 
 async function savePerms() {
   var { error } = await db.from('permissions').update({
@@ -1632,6 +1645,13 @@ async function changeRole(id, cur) {
   var { error } = await db.from('profiles').update({role:next}).eq('id',id)
   if(error){showToast('Erro','error');return}
   showToast('Nível alterado para '+next,'success'); loadTeam()
+}
+
+function toggleMemberById(btn) {
+  var id = btn.dataset.id
+  var hiddenEl = document.querySelector('.member-active-' + id)
+  var cur = hiddenEl ? hiddenEl.value === 'true' : true
+  toggleMember(id, cur)
 }
 
 async function toggleMember(id, cur) {
