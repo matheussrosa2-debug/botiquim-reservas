@@ -874,9 +874,9 @@ if (typeof CONFIG !== 'undefined') {
       <input class="modal-input" type="text" id="eu-nome" placeholder="Nome completo" autocomplete="off">
     </div>
     <div class="modal-field">
-      <label class="modal-label">Usuário (login) <span style="color:var(--red)">*</span></label>
-      <input class="modal-input" type="text" id="eu-username" placeholder="somente letras e numeros" autocomplete="off" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9.]/g,'')">
-      <p style="font-size:0.68rem;color:var(--muted);margin-top:0.25rem">Somente letras minúsculas, números e pontos</p>
+      <label class="modal-label">E-mail (login)</label>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:0.65rem 0.8rem;font-size:0.85rem;color:var(--muted)" id="eu-email-display">—</div>
+      <p style="font-size:0.68rem;color:var(--muted);margin-top:0.25rem">Para alterar o e-mail, acesse o Supabase → Authentication → Users</p>
     </div>
     <div class="modal-field">
       <label class="modal-label">Nova senha <span style="font-size:0.65rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">(deixe em branco para manter)</span></label>
@@ -1661,7 +1661,7 @@ function openEditUser(idx) {
   if (!m) return
   document.getElementById('eu-user-id').value   = m.id
   document.getElementById('eu-nome').value       = m.name || ''
-  document.getElementById('eu-username').value   = m.username || (m.email||'').split('@')[0]
+  var emailEl = document.getElementById('eu-email-display'); if(emailEl) emailEl.textContent = m.email || '—'
   document.getElementById('eu-senha').value      = ''
   document.getElementById('eu-role').value       = m.role || 'gerente'
   openModal('modal-edit-user')
@@ -1670,18 +1670,16 @@ function openEditUser(idx) {
 async function saveEditUser() {
   var userId   = document.getElementById('eu-user-id').value
   var nome     = document.getElementById('eu-nome').value.trim()
-  var username = document.getElementById('eu-username').value.trim()
   var senha    = document.getElementById('eu-senha').value
   var role     = document.getElementById('eu-role').value
 
-  if (!nome)     { showToast('Informe o nome', 'error'); return }
-  if (!username) { showToast('Informe o usuário', 'error'); return }
+  if (!nome) { showToast('Informe o nome', 'error'); return }
 
   var btn = document.getElementById('btn-eu-save')
   btn.disabled = true; btn.textContent = 'Salvando...'
 
   // Update profile
-  var { error } = await db.from('profiles').update({ name: nome, role: role, username: username }).eq('id', userId)
+  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
   if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
 
   // Update password if provided
@@ -1714,7 +1712,7 @@ function openEditUser(idx) {
   if (!m) return
   document.getElementById('eu-user-id').value   = m.id
   document.getElementById('eu-nome').value       = m.name || ''
-  document.getElementById('eu-username').value   = m.username || (m.email||'').split('@')[0]
+  var emailEl = document.getElementById('eu-email-display'); if(emailEl) emailEl.textContent = m.email || '—'
   document.getElementById('eu-senha').value      = ''
   document.getElementById('eu-role').value       = m.role || 'gerente'
   openModal('modal-edit-user')
@@ -1723,18 +1721,16 @@ function openEditUser(idx) {
 async function saveEditUser() {
   var userId   = document.getElementById('eu-user-id').value
   var nome     = document.getElementById('eu-nome').value.trim()
-  var username = document.getElementById('eu-username').value.trim()
   var senha    = document.getElementById('eu-senha').value
   var role     = document.getElementById('eu-role').value
 
-  if (!nome)     { showToast('Informe o nome', 'error'); return }
-  if (!username) { showToast('Informe o usuário', 'error'); return }
+  if (!nome) { showToast('Informe o nome', 'error'); return }
 
   var btn = document.getElementById('btn-eu-save')
   btn.disabled = true; btn.textContent = 'Salvando...'
 
   // Update profile
-  var { error } = await db.from('profiles').update({ name: nome, role: role, username: username }).eq('id', userId)
+  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
   if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
 
   // Update password if provided
