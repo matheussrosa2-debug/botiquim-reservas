@@ -1661,7 +1661,7 @@ function openEditUser(idx) {
   if (!m) return
   document.getElementById('eu-user-id').value   = m.id
   document.getElementById('eu-nome').value       = m.name || ''
-  document.getElementById('eu-username').value   = (m.email||'').split('@')[0]
+  document.getElementById('eu-username').value   = m.username || (m.email||'').split('@')[0]
   document.getElementById('eu-senha').value      = ''
   document.getElementById('eu-role').value       = m.role || 'gerente'
   openModal('modal-edit-user')
@@ -1681,7 +1681,7 @@ async function saveEditUser() {
   btn.disabled = true; btn.textContent = 'Salvando...'
 
   // Update profile
-  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
+  var { error } = await db.from('profiles').update({ name: nome, role: role, username: username }).eq('id', userId)
   if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
 
   // Update password if provided
@@ -1714,7 +1714,7 @@ function openEditUser(idx) {
   if (!m) return
   document.getElementById('eu-user-id').value   = m.id
   document.getElementById('eu-nome').value       = m.name || ''
-  document.getElementById('eu-username').value   = (m.email||'').split('@')[0]
+  document.getElementById('eu-username').value   = m.username || (m.email||'').split('@')[0]
   document.getElementById('eu-senha').value      = ''
   document.getElementById('eu-role').value       = m.role || 'gerente'
   openModal('modal-edit-user')
@@ -1734,7 +1734,7 @@ async function saveEditUser() {
   btn.disabled = true; btn.textContent = 'Salvando...'
 
   // Update profile
-  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
+  var { error } = await db.from('profiles').update({ name: nome, role: role, username: username }).eq('id', userId)
   if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
 
   // Update password if provided
