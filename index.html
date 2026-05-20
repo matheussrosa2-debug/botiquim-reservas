@@ -346,7 +346,9 @@ function selectAmbiente(el, nome) {
   el.classList.add('selected'); selectedAmbiente=nome; selectedMesa='';
   document.querySelectorAll('.pref-card').forEach(function(c){c.classList.remove('selected');});
   document.getElementById('error-amb').style.display='none';
-  var prefs = PREFS[nome]||['Sem preferência'];
+  // Sempre busca prefs do AMBIENTES_LIST (que vem do banco)
+  var ambObj = AMBIENTES_LIST.find(function(a){ return a.nome === nome; });
+  var prefs = (ambObj && ambObj.preferencias && ambObj.preferencias.length) ? ambObj.preferencias : (PREFS[nome] || ['Sem preferência']);
   var grid  = document.getElementById('pref-grid');
   grid.innerHTML = '';
   prefs.forEach(function(p) {
