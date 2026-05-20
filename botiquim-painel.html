@@ -813,6 +813,27 @@ if (typeof CONFIG !== 'undefined') {
   </div>
 </div>
 
+<!-- Modal: Redefinir senha -->
+<div class="modal-overlay" id="modal-reset-pwd">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-reset-pwd')">x</button>
+    <div class="modal-title" style="color:var(--primary)">Redefinir senha</div>
+    <div class="modal-sub" id="rp-sub">—</div>
+    <div class="modal-field">
+      <label class="modal-label">Nova senha</label>
+      <input class="modal-input" type="password" id="rp-pass" placeholder="Mínimo 8 caracteres">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Confirmar senha</label>
+      <input class="modal-input" type="password" id="rp-confirm" placeholder="Repita a senha">
+    </div>
+    <div class="modal-acts">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('modal-reset-pwd')">Cancelar</button>
+      <button class="mbtn mbtn-primary" id="btn-do-reset-pwd" onclick="doResetPwd()">Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1283,8 +1304,8 @@ async function approve(id) {
   var { error } = await db.from('reservations').update({status:'confirmed'}).eq('id',id)
   if (error) { showToast('Erro ao aprovar','error'); return }
   await logAction('approve', id)
-  await sendWpp(r.phone, buildMsg(cfgData.tpl_confirmacao||'Reserva confirmada, {nome}!', r))
-  if (cfgData.owner_phone) await sendWpp(cfgData.owner_phone, 'Reserva confirmada: '+r.name+' · '+fmtDate(r.date)+' às '+r.time+' · '+r.id)
+  await sendWpp(r.phone, buildMsg(cfgData.tpl_confirmacao||'Reserva confirmada, {nome}!', r), false)
+  if (cfgData.owner_phone) await sendWpp(cfgData.owner_phone, 'Reserva confirmada: '+r.name+' · '+fmtDate(r.date)+' às '+r.time+' · '+r.id, false)
   r.status = 'confirmed'; renderAll(); showToast('Reserva confirmada!','success')
 }
 
@@ -1590,6 +1611,53 @@ async function toggleMember(id, cur) {
   showToast(cur?'Membro desativado':'Membro reativado','success'); loadTeam()
 }
 
+// ── RESET PASSWORD ─────────────────────────────────────────────
+var resetPwdUserId = ''
+
+function openResetPwd(userId, userName) {
+  resetPwdUserId = userId
+  document.getElementById('rp-sub').textContent = 'Usuário: ' + userName
+  document.getElementById('rp-pass').value    = ''
+  document.getElementById('rp-confirm').value = ''
+  openModal('modal-reset-pwd')
+}
+
+async function doResetPwd() {
+  var pass    = document.getElementById('rp-pass').value
+  var confirm = document.getElementById('rp-confirm').value
+
+  if (pass.length < 8) { showToast('A senha deve ter ao menos 8 caracteres', 'error'); return }
+  if (pass !== confirm) { showToast('As senhas não coincidem', 'error'); return }
+  if (!resetPwdUserId)  { showToast('Usuário não identificado', 'error'); return }
+
+  var btn = document.getElementById('btn-do-reset-pwd')
+  btn.disabled = true; btn.textContent = 'Salvando...'
+
+  // Precisa do adminDb com service_role key
+  var svcKey = CONFIG.supabaseService
+  if (!svcKey || svcKey === 'eyJhbGc...') {
+    btn.disabled = false; btn.textContent = 'Salvar nova senha'
+    showToast('Configure a supabaseService no config.js para usar esta função', 'error')
+    return
+  }
+
+  var { createClient } = supabase
+  var adminClient = createClient(CONFIG.supabaseUrl, svcKey)
+
+  var { error } = await adminClient.auth.admin.updateUserById(resetPwdUserId, { password: pass })
+
+  btn.disabled = false; btn.textContent = 'Salvar nova senha'
+
+  if (error) {
+    showToast('Erro: ' + error.message, 'error')
+    return
+  }
+
+  closeModal('modal-reset-pwd')
+  showToast('✓ Senha alterada com sucesso!', 'success')
+  await logAction('reset_password', null, { target_user: resetPwdUserId })
+}
+
 async function doInvite() {
   var nome  = document.getElementById('inv-nome').value.trim()
   var email = document.getElementById('inv-email').value.trim()
@@ -1625,6 +1693,7 @@ function populateCfgForm() {
   set('cfg-zapi-client',  cfgData.zapi_client_token)
   set('cfg-site-url',     cfgData.site_url)
   set('cfg-mgr-phone',    cfgData.manager_phone ? cfgData.manager_phone.replace(/^55/,'') : '')
+  set('cfg-group-id',     cfgData.group_id || '')
   set('cfg-owner-phone',  cfgData.owner_phone ? cfgData.owner_phone.replace(/^55/,'') : '')
   set('cfg-tpl-conf',     cfgData.tpl_confirmacao)
   set('cfg-tpl-rec',      cfgData.tpl_recusa)
@@ -1841,16 +1910,17 @@ function buildMsg(tpl, r, extra) {
     .replace(/\\n/g,           '\n')
 }
 
-async function sendWpp(phone, message) {
+async function sendWpp(phone, message, useGroup) {
   var inst = cfgData.zapi_instance
   var tok  = cfgData.zapi_token
   var cli  = cfgData.zapi_client_token
   if (!inst || !tok) return
-  var p = '55'+phone.replace(/\D/g,'').replace(/^55/,'')
+  // Se useGroup=true e tiver grupo configurado, envia pro grupo
+  var target = (useGroup && cfgData.group_id) ? cfgData.group_id : '55'+phone.replace(/\D/g,'').replace(/^55/,'')
   try {
     await fetch('https://api.z-api.io/instances/'+inst+'/token/'+tok+'/send-text',
       {method:'POST',headers:{'Content-Type':'application/json','client-token':cli||''},
-       body:JSON.stringify({phone:p,message})})
+       body:JSON.stringify({phone:target,message})})
   } catch(e){}
 }
 

@@ -443,12 +443,13 @@ async function submitReserva() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 async function notificarGerente(r,codigo,token) {
-  if(!CONFIG.managerPhone||CONFIG.zapiInstance==='SUA_INSTANCIA') return;
+  if(!CONFIG.zapiInstance||CONFIG.zapiInstance==='SUA_INSTANCIA') return;
   var d=r.date.split('-');
   var link=CONFIG.confirmarUrl+'?id='+codigo+'&token='+token;
   var msg='*Nova reserva — '+CONFIG.restaurante+'*\n\nNome: *'+r.name+'*\nData: '+d[2]+'/'+d[1]+'/'+d[0]+' às '+r.time+'\nPessoas: '+r.people+'\nAmbiente: '+r.ambiente+(r.preferencia?' — '+r.preferencia:'')+'\nOcasião: '+r.ocasiao+'\nTelefone: '+r.phone+'\n'+(r.obs?'Obs: '+r.obs+'\n':'')+'Código: *'+codigo+'*\n\nConfirmar agora:\n'+link+'\n\nPara recusar, acesse o painel.';
-  var phone='55'+CONFIG.managerPhone.replace(/\D/g,'').replace(/^55/,'');
-  try{await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text',{method:'POST',headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken},body:JSON.stringify({phone:phone,message:msg})});}catch(e){}
+  // Usa grupo se configurado, senão usa telefone do gerente
+  var destino = CONFIG.groupId ? CONFIG.groupId : '55'+CONFIG.managerPhone.replace(/\D/g,'').replace(/^55/,'');
+  try{await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text',{method:'POST',headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken},body:JSON.stringify({phone:destino,message:msg})});}catch(e){}
 }
 </script>
 </body>
