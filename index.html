@@ -305,11 +305,18 @@ async function loadAmbientesFromDB() {
     if (r.data && r.data.ambientes_config) {
       var saved = JSON.parse(r.data.ambientes_config);
       if (saved && saved.length) {
+        // Sobrescreve completamente o AMBIENTES_LIST com o que está no banco
         AMBIENTES_LIST = saved;
-        saved.forEach(function(a) { if (a.preferencias && a.preferencias.length) PREFS[a.nome] = a.preferencias; });
+        // Reconstrói PREFS a partir do banco
+        PREFS = {};
+        saved.forEach(function(a) {
+          if (a.preferencias && a.preferencias.length) {
+            PREFS[a.nome] = a.preferencias;
+          }
+        });
       }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadAmbientesFromDB error:', e) }
   buildLayout();
 }
 
