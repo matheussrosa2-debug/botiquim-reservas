@@ -553,6 +553,11 @@ if (typeof CONFIG !== 'undefined') {
         <div style="background:var(--surface);border:2px solid var(--border);border-radius:9px;padding:0.55rem 0.75rem;font-size:0.82rem;color:var(--muted);white-space:nowrap;display:flex;align-items:center;flex-shrink:0">🇧🇷 +55</div>
         <input class="cfg-input" id="cfg-owner-phone" placeholder="19987654321" style="flex:1">
       </div><p style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem">Recebe apenas informativo de cada reserva</p></div>
+        <div class="cfg-field" style="grid-column:1/-1">
+          <label class="cfg-label">Grupo do WhatsApp <span style="font-size:0.6rem;background:var(--primary-dim);color:var(--primary);border-radius:4px;padding:0.1rem 0.4rem;font-weight:600;margin-left:0.3rem">RECOMENDADO</span></label>
+          <input class="cfg-input" id="cfg-group-id" placeholder="120363424740302729-group">
+          <p style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem">ID do grupo — se preenchido, notificações vão para o grupo em vez do número individual</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1556,7 +1561,8 @@ async function loadTeam() {
         '<div class="t-email">'+(m.email||'—')+'</div>'+
         '<div class="t-badges"><div class="role-chip '+m.role+'">'+roleLabel+'</div><div class="t-dot '+(m.active?'active':'inactive')+'"></div><span style="font-size:0.65rem;color:var(--muted)">'+(m.active?'Ativo':'Inativo')+'</span></div>'+
       '</div>'+
-      (!isYou?'<div class="t-acts"><button class="tbtn" onclick="changeRole(\''+m.id+'\',\''+m.role+'\')">Mudar nível</button><button class="tbtn danger" onclick="toggleMember(\''+m.id+'\','+m.active+')">'+(m.active?'Desativar':'Ativar')+'</button></div>':'')+
+      (!isYou?'<div class="t-acts">'+(currentRole==="master"?'<button class="tbtn" onclick="openResetPwd(\''+m.id+'\',\''+m.name+'\')" style="border-color:var(--gold);color:var(--gold)">🔑 Senha</button>':'')+
+        '<button class="tbtn" onclick="changeRole(\''+m.id+'\',\''+m.role+'\')">Mudar nível</button><button class="tbtn danger" onclick="toggleMember(\''+m.id+'\','+m.active+')">'+(m.active?'Desativar':'Ativar')+'</button></div>':'')+
     '</div>'
   }).join('')
 
@@ -1707,8 +1713,7 @@ function populateCfgForm() {
   if(togD1)  togD1.className  = 'cfg-toggle '+(cfgData.lembrete_d1_ativo ?'on':'off')
   if(togDia) togDia.className = 'cfg-toggle '+(cfgData.lembrete_dia_ativo?'on':'off')
 
-  // Atualiza logo com nome do restaurante
-  if(cfgData.restaurante_nome) document.getElementById('logo-n').textContent = cfgData.restaurante_nome
+  // logo é imagem, sem texto para atualizar
 }
 
 async function saveCfg() {
@@ -1733,6 +1738,7 @@ async function saveCfg() {
     lembrete_dia_hora: document.getElementById('cfg-hora-dia')?.value || '10:00',
     lembrete_d1_ativo: document.getElementById('tog-d1')?.classList.contains('on') || false,
     lembrete_dia_ativo:document.getElementById('tog-dia')?.classList.contains('on') || false,
+    group_id:          document.getElementById('cfg-group-id')?.value.trim() || '',
     updated_at:        new Date().toISOString()
   }
 
@@ -1989,6 +1995,62 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListen
 
 // ── TOAST ──────────────────────────────────────────────────────
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(function(){t.classList.remove('show')},3500)}
+
+// ── DRAG FOR MAP EDIT ──────────────────────────────────────────
+function setupDrag() {
+  document.addEventListener('mousemove', onDragMove)
+  document.addEventListener('mouseup', onDragEnd)
+  document.addEventListener('touchmove', onDragMoveTouch, {passive:false})
+  document.addEventListener('touchend', onDragEnd)
+}
+function startDrag(e, ambId, mesaId) {
+  e.preventDefault()
+  mapDragData = { ambId:ambId, mesaId:mesaId, el:document.getElementById('mm-'+ambId+'-'+mesaId) }
+}
+function startDragTouch(e, ambId, mesaId) { e.preventDefault(); startDrag(e, ambId, mesaId) }
+function getPercent(e, panel) {
+  var rect = panel.getBoundingClientRect()
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY
+  return {
+    x: Math.max(5, Math.min(95, ((clientX-rect.left)/rect.width)*100)),
+    y: Math.max(5, Math.min(95, ((clientY-rect.top)/rect.height)*100))
+  }
+}
+function onDragMove(e) {
+  if (!mapDragData) return
+  var panel = document.getElementById('map-panel-'+mapDragData.ambId)
+  if (!panel) return
+  var p = getPercent(e, panel)
+  mapDragData.el.style.left = p.x+'%'
+  mapDragData.el.style.top  = p.y+'%'
+  if (!mapPositions[mapDragData.ambId]) mapPositions[mapDragData.ambId] = {}
+  mapPositions[mapDragData.ambId][mapDragData.mesaId] = p
+}
+function onDragMoveTouch(e) { e.preventDefault(); onDragMove(e) }
+function onDragEnd() {
+  mapDragData = null
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+  document.removeEventListener('touchmove', onDragMoveTouch)
+  document.removeEventListener('touchend', onDragEnd)
+  if (mapEditMode) setupDrag()
+}
+
+// ── MAP IMG FIELDS ─────────────────────────────────────────────
+function renderMapImgFields() {
+  var ambientes = (typeof CONFIG !== 'undefined' && CONFIG.ambientes) ? CONFIG.ambientes : []
+  var el = document.getElementById('map-img-fields')
+  if (!el) return
+  el.innerHTML = ambientes.map(function(amb) {
+    var cur = mapImages[amb.id] || ''
+    return '<div class="cfg-field" style="margin-bottom:0.75rem">'+
+      '<label class="cfg-label">'+amb.icon+' '+amb.nome+'</label>'+
+      '<input class="cfg-input" id="cfg-mapimg-'+amb.id+'" value="'+cur+'" placeholder="https://raw.githubusercontent.com/...">'+
+      (cur?'<img src="'+cur+'" style="margin-top:0.5rem;width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" onerror="this.style.display='none'">':'')+
+    '</div>'
+  }).join('')
+}
 
 // ── BOOT ───────────────────────────────────────────────────────
 async function boot() {
