@@ -2042,14 +2042,16 @@ function renderMapImgFields() {
   var ambientes = (typeof CONFIG !== 'undefined' && CONFIG.ambientes) ? CONFIG.ambientes : []
   var el = document.getElementById('map-img-fields')
   if (!el) return
-  el.innerHTML = ambientes.map(function(amb) {
+  var html = ''
+  ambientes.forEach(function(amb) {
     var cur = mapImages[amb.id] || ''
-    return '<div class="cfg-field" style="margin-bottom:0.75rem">'+
-      '<label class="cfg-label">'+amb.icon+' '+amb.nome+'</label>'+
-      '<input class="cfg-input" id="cfg-mapimg-'+amb.id+'" value="'+cur+'" placeholder="https://raw.githubusercontent.com/...">'+
-      (cur?'<img src="'+cur+'" style="margin-top:0.5rem;width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" onerror="this.style.display='none'">':'')+
-    '</div>'
-  }).join('')
+    html += '<div class="cfg-field" style="margin-bottom:0.75rem">'
+    html += '<label class="cfg-label">'+amb.icon+' '+amb.nome+'</label>'
+    html += '<input class="cfg-input" id="cfg-mapimg-'+amb.id+'" value="'+cur+'" placeholder="https://raw.githubusercontent.com/...">'
+    if (cur) { html += '<img src="'+cur+'" style="margin-top:0.5rem;width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" onerror="this.style.display='none'">' }
+    html += '</div>'
+  })
+  el.innerHTML = html
 }
 
 // ── BOOT ───────────────────────────────────────────────────────
