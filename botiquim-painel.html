@@ -862,6 +862,42 @@ if (typeof CONFIG !== 'undefined') {
   </div>
 </div>
 
+<!-- Modal: Editar usuário -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+      <button onclick="closeModal('modal-edit-user')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0;line-height:1">←</button>
+      <div class="modal-title" style="margin:0">Editar usuário</div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Nome completo <span style="color:var(--red)">*</span></label>
+      <input class="modal-input" type="text" id="eu-nome" placeholder="Nome completo" autocomplete="off">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Usuário (login) <span style="color:var(--red)">*</span></label>
+      <input class="modal-input" type="text" id="eu-username" placeholder="somente letras e numeros" autocomplete="off" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9.]/g,'')">
+      <p style="font-size:0.68rem;color:var(--muted);margin-top:0.25rem">Somente letras minúsculas, números e pontos</p>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Nova senha <span style="font-size:0.65rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">(deixe em branco para manter)</span></label>
+      <input class="modal-input" type="password" id="eu-senha" placeholder="••••••••" autocomplete="new-password">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Nível de acesso</label>
+      <select class="modal-select" id="eu-role">
+        <option value="gerente">Gestor (acesso total)</option>
+        <option value="admin">Admin</option>
+        <option value="staff">Funcionário</option>
+      </select>
+    </div>
+    <input type="hidden" id="eu-user-id">
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+      <button class="mbtn mbtn-primary" style="flex:2" id="btn-eu-save" onclick="saveEditUser()">Salvar</button>
+      <button class="mbtn mbtn-cancel" style="flex:1" onclick="closeModal('modal-edit-user')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1599,7 +1635,7 @@ async function loadTeam() {
     var acts = ''
     if (!me) {
       if (isMaster) acts += '<button class="tact-btn tact-pwd" data-i="'+i+'" onclick="openResetPwdIdx(this.dataset.i)">Senha</button> '
-      acts += '<button class="tact-btn tact-edit" data-i="'+i+'" onclick="changRoleIdx(this.dataset.i)">Editar nivel</button> '
+      acts += '<button class="tact-btn tact-edit" data-i="'+i+'" onclick="changRoleIdx(this.dataset.i)">Editar</button> '
       acts += '<button class="tact-btn '+(active?'tact-disable':'tact-enable')+'" data-i="'+i+'" onclick="togMemberIdx(this.dataset.i)">'+(active?'Desativar':'Ativar')+'</button>'
     } else {
       acts = '<span style="font-size:0.68rem;color:var(--muted);font-style:italic">voce</span>'
@@ -1620,10 +1656,106 @@ async function loadTeam() {
     '</tr></thead><tbody>'+rows+'</tbody></table>'
 }
 
+function openEditUser(idx) {
+  var m = window._teamMembers[parseInt(idx)]
+  if (!m) return
+  document.getElementById('eu-user-id').value   = m.id
+  document.getElementById('eu-nome').value       = m.name || ''
+  document.getElementById('eu-username').value   = (m.email||'').split('@')[0]
+  document.getElementById('eu-senha').value      = ''
+  document.getElementById('eu-role').value       = m.role || 'gerente'
+  openModal('modal-edit-user')
+}
+
+async function saveEditUser() {
+  var userId   = document.getElementById('eu-user-id').value
+  var nome     = document.getElementById('eu-nome').value.trim()
+  var username = document.getElementById('eu-username').value.trim()
+  var senha    = document.getElementById('eu-senha').value
+  var role     = document.getElementById('eu-role').value
+
+  if (!nome)     { showToast('Informe o nome', 'error'); return }
+  if (!username) { showToast('Informe o usuário', 'error'); return }
+
+  var btn = document.getElementById('btn-eu-save')
+  btn.disabled = true; btn.textContent = 'Salvando...'
+
+  // Update profile
+  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
+  if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
+
+  // Update password if provided
+  if (senha) {
+    if (senha.length < 6) { showToast('Senha mínimo 6 caracteres', 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
+    var svcKey = CONFIG.supabaseService
+    if (svcKey && svcKey !== 'eyJhbGc...') {
+      var { createClient: cc } = supabase
+      var adminCli = cc(CONFIG.supabaseUrl, svcKey)
+      var { error: pe } = await adminCli.auth.admin.updateUserById(userId, { password: senha })
+      if (pe) { showToast('Senha não atualizada: ' + pe.message, 'error') }
+    } else {
+      showToast('Configure supabaseService para alterar senhas', 'error')
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Salvar'
+  closeModal('modal-edit-user')
+  showToast('Usuário atualizado!', 'success')
+  loadTeam()
+}
+
 function openResetPwdIdx(i) { var m = window._teamMembers[parseInt(i)]; if(m) openResetPwd(m.id, m.name||m.email) }
-function changRoleIdx(i)    { var m = window._teamMembers[parseInt(i)]; if(m) changeRole(m.id, m.role||'staff') }
+function changRoleIdx(i)    { openEditUser(i) }
 function togMemberIdx(i)    { var m = window._teamMembers[parseInt(i)]; if(m) toggleMember(m.id, m.active!==false) }
 
+
+function openEditUser(idx) {
+  var m = window._teamMembers[parseInt(idx)]
+  if (!m) return
+  document.getElementById('eu-user-id').value   = m.id
+  document.getElementById('eu-nome').value       = m.name || ''
+  document.getElementById('eu-username').value   = (m.email||'').split('@')[0]
+  document.getElementById('eu-senha').value      = ''
+  document.getElementById('eu-role').value       = m.role || 'gerente'
+  openModal('modal-edit-user')
+}
+
+async function saveEditUser() {
+  var userId   = document.getElementById('eu-user-id').value
+  var nome     = document.getElementById('eu-nome').value.trim()
+  var username = document.getElementById('eu-username').value.trim()
+  var senha    = document.getElementById('eu-senha').value
+  var role     = document.getElementById('eu-role').value
+
+  if (!nome)     { showToast('Informe o nome', 'error'); return }
+  if (!username) { showToast('Informe o usuário', 'error'); return }
+
+  var btn = document.getElementById('btn-eu-save')
+  btn.disabled = true; btn.textContent = 'Salvando...'
+
+  // Update profile
+  var { error } = await db.from('profiles').update({ name: nome, role: role }).eq('id', userId)
+  if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
+
+  // Update password if provided
+  if (senha) {
+    if (senha.length < 6) { showToast('Senha mínimo 6 caracteres', 'error'); btn.disabled=false; btn.textContent='Salvar'; return }
+    var svcKey = CONFIG.supabaseService
+    if (svcKey && svcKey !== 'eyJhbGc...') {
+      var { createClient: cc } = supabase
+      var adminCli = cc(CONFIG.supabaseUrl, svcKey)
+      var { error: pe } = await adminCli.auth.admin.updateUserById(userId, { password: senha })
+      if (pe) { showToast('Senha não atualizada: ' + pe.message, 'error') }
+    } else {
+      showToast('Configure supabaseService para alterar senhas', 'error')
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Salvar'
+  closeModal('modal-edit-user')
+  showToast('Usuário atualizado!', 'success')
+  loadTeam()
+}
 
 function openResetPwdIdx(idx) {
   var m = window._teamMembers && window._teamMembers[parseInt(idx)]
