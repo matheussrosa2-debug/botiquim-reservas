@@ -314,7 +314,25 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .map-legend-row{display:flex;gap:0.75rem;flex-wrap:wrap}
 @media(max-width:900px){.sidebar{display:none}.stats-bar{grid-template-columns:repeat(2,1fr)}.map-grid{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:600px){.topbar{padding:0.6rem 1rem}.main-wrap{padding:0.75rem 1rem}.stats-bar{padding:0.6rem 1rem}.filter-bar{padding:0.5rem 1rem}.cfg-grid{grid-template-columns:1fr}.modal-detail-grid{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(2,1fr)}}
-@media print{.topbar,.stats-bar,.filter-bar,.sidebar,.modal-overlay,.toast{display:none!important}.view{display:block!important;padding:0}}
+/* BLOQUEIOS */
+.blk-form{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1.1rem;margin-bottom:1rem}
+.blk-form-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);margin-bottom:0.875rem}
+.blk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.65rem;margin-bottom:0.75rem}
+.blk-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:11px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow)}
+.blk-table th{font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0.65rem 0.875rem;text-align:left;border-bottom:1px solid var(--border);background:var(--surface)}
+.blk-table td{padding:0.75rem 0.875rem;border-bottom:1px solid var(--border);font-size:0.82rem;color:var(--text);vertical-align:middle}
+.blk-table tr:last-child td{border-bottom:none}
+.blk-table tr:hover td{background:var(--surface)}
+.blk-tipo{display:inline-block;font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.12rem 0.45rem;border-radius:10px;font-weight:600}
+.blk-tipo.dia{background:rgba(196,30,30,0.12);border:1px solid rgba(196,30,30,0.25);color:#e07070}
+.blk-tipo.horario{background:var(--yellow-bg);border:1px solid var(--yellow-border);color:#c4a040}
+.blk-tipo.ambiente{background:var(--blue-bg);border:1px solid var(--blue-border);color:#6aaad4}
+.blk-tipo.slot{background:rgba(100,60,160,0.1);border:1px solid rgba(100,60,160,0.25);color:#a07ad4}
+.blk-del{background:none;border:1px solid var(--red-border);color:#e07070;border-radius:5px;padding:0.2rem 0.5rem;font-size:0.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.blk-del:hover{background:var(--red);border-color:var(--red);color:#fff}
+.blk-empty{text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem}
+@media(max-width:600px){.blk-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
@@ -347,6 +365,7 @@ if (typeof CONFIG !== 'undefined') {
       <button class="nav-tab" onclick="setView('briefing',this)" id="tab-briefing" style="display:none">Briefing</button>
       <button class="nav-tab" onclick="setView('events',this)" id="tab-eventos" style="display:none">Eventos</button>
       <button class="nav-tab" onclick="setView('access',this)" id="tab-access" style="display:none">Acesso</button>
+      <button class="nav-tab" onclick="setView('bloqueios',this)" id="tab-bloqueios" style="display:none">🚫 Bloqueios</button>
       <button class="nav-tab" onclick="setView('config',this)" id="tab-config" style="display:none">Config</button>
     </div>
   </div>
@@ -453,6 +472,53 @@ if (typeof CONFIG !== 'undefined') {
     <div id="perm-roles"></div>
   </div>
   <div class="team-list" id="team-list"><div class="loading">Carregando...</div></div>
+</div>
+
+<!-- BLOQUEIOS VIEW -->
+<div id="view-bloqueios" class="view">
+
+  <!-- Formulário de novo bloqueio -->
+  <div class="blk-form">
+    <div class="blk-form-title">🚫 Bloquear data ou horário</div>
+    <div class="blk-grid">
+      <div class="cfg-field">
+        <label class="cfg-label">Data *</label>
+        <input class="cfg-input" type="date" id="blk-data">
+      </div>
+      <div class="cfg-field">
+        <label class="cfg-label">Horário <span style="font-size:0.6rem;color:var(--muted);text-transform:none;letter-spacing:0">(opcional)</span></label>
+        <select class="cfg-input" id="blk-hora">
+          <option value="">Dia inteiro</option>
+        </select>
+      </div>
+      <div class="cfg-field">
+        <label class="cfg-label">Ambiente <span style="font-size:0.6rem;color:var(--muted);text-transform:none;letter-spacing:0">(opcional)</span></label>
+        <select class="cfg-input" id="blk-ambiente">
+          <option value="">Todos os ambientes</option>
+        </select>
+      </div>
+      <div class="cfg-field" style="grid-column:1/-1">
+        <label class="cfg-label">Motivo <span style="font-size:0.6rem;color:var(--muted);text-transform:none;letter-spacing:0">(aparece para o cliente)</span></label>
+        <input class="cfg-input" type="text" id="blk-motivo" placeholder="Ex: Evento privado, Manutenção, Feriado...">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <button class="cfg-save" style="margin:0" onclick="salvarBloqueio()">🚫 Criar bloqueio</button>
+      <span style="font-size:0.72rem;color:var(--muted)">Sem horário = dia inteiro bloqueado · Sem ambiente = todos os ambientes</span>
+    </div>
+    <div id="blk-alert" style="display:none;margin-top:0.75rem;padding:0.6rem 0.875rem;border-radius:7px;font-size:0.78rem"></div>
+  </div>
+
+  <!-- Lista de bloqueios ativos -->
+  <div class="section-head">
+    <div>
+      <div class="section-title">Bloqueios ativos</div>
+      <div class="section-sub">Datas e horários indisponíveis para reservas</div>
+    </div>
+    <button class="bbtn" onclick="loadBloqueios()">↻ Atualizar</button>
+  </div>
+  <div id="blk-list"><div class="loading">Carregando...</div></div>
+
 </div>
 
 <!-- CONFIG VIEW -->
@@ -988,6 +1054,7 @@ function applyPerms() {
   if (can('eventos'))    { show('tab-eventos') }   else { hide('tab-eventos') }
   if (can('equipe'))     { show('tab-access') }    else { hide('tab-access') }
   if (can('config') || isMaster) { show('tab-config') } else { hide('tab-config') }
+  if (can('aprovar') || isMaster) { show('tab-bloqueios') } else { hide('tab-bloqueios') }
   if (!can('historico')) { hide('ftab-hist') }
 }
 
@@ -1536,6 +1603,113 @@ async function doManual() {
   if(error){showToast('Erro: '+(error.message||'tente novamente'),'error');return}
   await logAction('create_manual', payload.id)
   closeModal('modal-manual'); loadReservations(); showToast('Reserva criada!','success')
+}
+
+// ── BLOQUEIOS ──────────────────────────────────────────────────
+function initBloqueiosForm() {
+  // Preenche select de horários
+  var sel = document.getElementById('blk-hora')
+  if (sel && sel.options.length <= 1) {
+    var hrs = CONFIG.horarios || ['11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','18:00','18:30','19:00','19:30','20:00','20:30']
+    hrs.forEach(function(h){ var o=document.createElement('option'); o.value=h; o.textContent=h; sel.appendChild(o) })
+  }
+  // Preenche select de ambientes
+  var amb = document.getElementById('blk-ambiente')
+  if (amb && amb.options.length <= 1) {
+    var ambientes = CONFIG.ambientes || [{nome:'Interno'},{nome:'Mezanino'}]
+    ambientes.forEach(function(a){ var o=document.createElement('option'); o.value=a.nome; o.textContent=(a.icon||'')+' '+a.nome; amb.appendChild(o) })
+  }
+  // Define data mínima como hoje
+  var d = document.getElementById('blk-data')
+  if (d) d.min = new Date().toISOString().split('T')[0]
+}
+
+async function loadBloqueios() {
+  initBloqueiosForm()
+  var el = document.getElementById('blk-list')
+  el.innerHTML = '<div class="loading">Carregando...</div>'
+  var { data, error } = await db.from('blocked_slots')
+    .select('*')
+    .gte('date', new Date().toISOString().split('T')[0])
+    .order('date', {ascending:true})
+    .order('time', {ascending:true})
+  if (error || !data || data.length === 0) {
+    el.innerHTML = '<div class="blk-empty">Nenhum bloqueio ativo. Use o formulário acima para criar.</div>'
+    return
+  }
+  var html = '<table class="blk-table"><thead><tr>'
+  html += '<th>Data</th><th>Tipo</th><th>Horário</th><th>Ambiente</th><th>Motivo</th><th></th>'
+  html += '</tr></thead><tbody>'
+  data.forEach(function(b) {
+    var d = b.date ? b.date.split('-') : ['','','']
+    var dataFmt = d.length===3 ? d[2]+'/'+d[1]+'/'+d[0] : '—'
+    // Determina tipo
+    var tipo, tipoLabel
+    if (!b.time && !b.ambiente) { tipo='dia'; tipoLabel='Dia inteiro' }
+    else if (b.time && b.ambiente) { tipo='slot'; tipoLabel='Horário + Ambiente' }
+    else if (b.time && !b.ambiente) { tipo='horario'; tipoLabel='Horário' }
+    else { tipo='ambiente'; tipoLabel='Ambiente' }
+    html += '<tr>'
+    html += '<td style="font-weight:500;color:var(--dark)">'+dataFmt+'</td>'
+    html += '<td><span class="blk-tipo '+tipo+'">'+tipoLabel+'</span></td>'
+    html += '<td>'+(b.time||'<span style="color:var(--muted)">Todos</span>')+'</td>'
+    html += '<td>'+(b.ambiente||'<span style="color:var(--muted)">Todos</span>')+'</td>'
+    html += '<td style="color:var(--muted)">'+(b.reason||'—')+'</td>'
+    html += '<td><button class="blk-del" onclick="deletarBloqueio(\''+b.id+'\')">Remover</button></td>'
+    html += '</tr>'
+  })
+  html += '</tbody></table>'
+  el.innerHTML = html
+}
+
+async function salvarBloqueio() {
+  var data    = document.getElementById('blk-data').value
+  var hora    = document.getElementById('blk-hora').value
+  var amb     = document.getElementById('blk-ambiente').value
+  var motivo  = document.getElementById('blk-motivo').value.trim()
+  var alertEl = document.getElementById('blk-alert')
+  if (!data) {
+    alertEl.style.display='block'
+    alertEl.style.background='var(--red-bg)'
+    alertEl.style.border='1px solid var(--red-border)'
+    alertEl.style.color='#e07070'
+    alertEl.textContent='⚠️ Informe a data do bloqueio.'
+    return
+  }
+  var payload = { date: data }
+  if (hora)   payload.time    = hora
+  if (amb)    payload.ambiente = amb
+  if (motivo) payload.reason  = motivo
+  var { error } = await db.from('blocked_slots').insert(payload)
+  if (error) {
+    alertEl.style.display='block'
+    alertEl.style.background='var(--red-bg)'
+    alertEl.style.border='1px solid var(--red-border)'
+    alertEl.style.color='#e07070'
+    alertEl.textContent='Erro ao salvar: '+error.message
+    return
+  }
+  // Limpa o formulário
+  document.getElementById('blk-data').value   = ''
+  document.getElementById('blk-hora').value   = ''
+  document.getElementById('blk-ambiente').value = ''
+  document.getElementById('blk-motivo').value = ''
+  alertEl.style.display='block'
+  alertEl.style.background='var(--green-bg)'
+  alertEl.style.border='1px solid var(--green-border)'
+  alertEl.style.color='#5bc47a'
+  var tipo = !hora && !amb ? 'Dia inteiro' : hora && amb ? 'Horário + ambiente' : hora ? 'Horário' : 'Ambiente'
+  alertEl.textContent='✅ Bloqueio criado! ('+tipo+')'
+  setTimeout(function(){ alertEl.style.display='none' }, 4000)
+  loadBloqueios()
+}
+
+async function deletarBloqueio(id) {
+  if (!confirm('Remover este bloqueio? A data voltará a ficar disponível.')) return
+  var { error } = await db.from('blocked_slots').delete().eq('id', id)
+  if (error) { showToast('Erro ao remover bloqueio','error'); return }
+  showToast('Bloqueio removido com sucesso','success')
+  loadBloqueios()
 }
 
 // ── EVENTS ─────────────────────────────────────────────────────
@@ -2128,6 +2302,7 @@ function setView(v, el) {
   if(v==='briefing') renderBriefing()
   if(v==='events')   loadEvents()
   if(v==='access')   loadTeam()
+  if(v==='bloqueios') loadBloqueios()
   if(v==='config')  { populateCfgForm(); renderMapImgFields(); loadAmbientesConfig() }
 }
 

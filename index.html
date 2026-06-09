@@ -156,12 +156,15 @@ footer{text-align:center;padding:2rem 1rem;font-size:0.72rem;color:var(--muted);
       <div class="row-2">
         <div class="field field-id" id="field-data">
           <label>Data</label>
-          <input type="date" id="data">
+          <input type="date" id="data" onchange="verificarDataBloqueada(this.value)">
         </div>
         <div class="field field-id" id="field-horario">
           <label>Horário</label>
           <select id="horario"><option value="">Selecione</option></select>
         </div>
+      </div>
+      <div id="alerta-data-bloqueada" style="display:none;background:var(--red-bg);border:1px solid var(--red-border);border-radius:9px;padding:0.75rem 1rem;font-size:0.84rem;color:var(--red);margin-bottom:0.75rem">
+        <strong>⛔ Data indisponível</strong><br><span id="alerta-data-msg">Esta data não está disponível para reservas.</span>
       </div>
       <div class="field field-id" id="field-ocasiao">
         <label>Ocasião</label>
@@ -301,6 +304,49 @@ loadAmbientesFromDB();
 // Carrega ambientes do banco (após todas as declarações)
 
 // Populate from config.js
+// ── Verificação de datas bloqueadas ─────────────────────────────
+var dataBloqueada = false;
+var bloqueioAtual = null; // {date, time, ambiente, reason}
+
+async function verificarDataBloqueada(data) {
+  if (!data) return;
+  dataBloqueada = false;
+  bloqueioAtual = null;
+  document.getElementById('alerta-data-bloqueada').style.display = 'none';
+  try {
+    var r = await sb.from('blocked_slots')
+      .select('date, time, ambiente, reason')
+      .eq('date', data);
+    if (r.data && r.data.length > 0) {
+      // Bloqueia o dia inteiro (sem time) ou se todos os slots estão bloqueados
+      var bloqueioTotal = r.data.find(function(b){ return !b.time && !b.ambiente; });
+      if (bloqueioTotal) {
+        dataBloqueada = true;
+        bloqueioAtual = bloqueioTotal;
+        var msg = bloqueioTotal.reason
+          ? 'Motivo: ' + bloqueioTotal.reason
+          : 'Esta data não está disponível para novas reservas.';
+        document.getElementById('alerta-data-msg').textContent = msg;
+        document.getElementById('alerta-data-bloqueada').style.display = 'block';
+      } else {
+        // Apenas alguns horários/ambientes bloqueados — avisa mas não bloqueia totalmente
+        bloqueioAtual = r.data;
+      }
+    }
+  } catch(e) { console.warn('verificarDataBloqueada error:', e); }
+}
+
+// Verifica bloqueio de horário+ambiente específico
+function isSlotBloqueado(data, hora, ambiente) {
+  if (!bloqueioAtual || !Array.isArray(bloqueioAtual)) return false;
+  return bloqueioAtual.some(function(b) {
+    var matchData    = !b.date     || b.date     === data;
+    var matchHora    = !b.time     || b.time     === hora;
+    var matchAmbient = !b.ambiente || b.ambiente === ambiente;
+    return matchData && matchHora && matchAmbient;
+  });
+}
+
 var horarioSel = document.getElementById('horario');
 CONFIG.horarios.forEach(function(h){var o=document.createElement('option');o.value=h;o.textContent=h;horarioSel.appendChild(o);});
 var ocasiaoSel = document.getElementById('ocasiao');
@@ -419,6 +465,7 @@ function toggleErr(id,e){var el=document.getElementById(id);if(el)el.classList.t
 function v1() {
   var data=document.getElementById('data').value,hora=document.getElementById('horario').value,ocas=document.getElementById('ocasiao').value;
   toggleErr('field-data',!data);toggleErr('field-horario',!hora);toggleErr('field-ocasiao',!ocas);
+  if(dataBloqueada){ document.getElementById('alerta-data-bloqueada').style.display='block'; return false; }
   return !!(data&&hora&&ocas);
 }
 function v3() {
@@ -453,6 +500,23 @@ function setDots(n) {
 function goToStep(n) {
   if(n===2&&!v1()) return;
   if(n===3&&!selectedAmbiente){document.getElementById('error-amb').style.display='block';return;}
+  // Verifica bloqueio de slot específico (data + hora + ambiente)
+  if(n===3){
+    var dataVal=document.getElementById('data').value, horaVal=document.getElementById('horario').value;
+    if(isSlotBloqueado(dataVal, horaVal, selectedAmbiente)){
+      document.getElementById('error-amb').style.display='none';
+      document.getElementById('alerta-data-bloqueada').style.display='none';
+      // Volta ao step 1 com mensagem de erro
+      var alertEl = document.getElementById('alerta-data-bloqueada');
+      document.getElementById('alerta-data-msg').textContent = 'O horário de '+horaVal+' no '+selectedAmbiente+' não está disponível nesta data. Escolha outro horário ou ambiente.';
+      alertEl.style.display = 'block';
+      document.querySelectorAll('.step').forEach(function(s){s.classList.remove('visible');});
+      document.getElementById('step-1').classList.add('visible');
+      setDots(1);
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+  }
   if(n===4&&!v3()) return;
   if(n===4) fillSummary();
   document.querySelectorAll('.step').forEach(function(s){s.classList.remove('visible');});
@@ -485,6 +549,7 @@ async function submitReserva() {
     alert('Erro: '+(result.error.message||'Tente novamente.'));return;
   }
   await notificarGerente(payload,codigo,token);
+  await notificarCliente(payload,codigo);
   document.getElementById('codigo-reserva').textContent=codigo;
   document.querySelector('.progress-wrap').style.display='none';
   document.querySelectorAll('.step').forEach(function(s){s.classList.remove('visible');});
@@ -496,9 +561,17 @@ async function notificarGerente(r,codigo,token) {
   var d=r.date.split('-');
   var link=CONFIG.confirmarUrl+'?id='+codigo+'&token='+token;
   var msg='*Nova reserva — '+CONFIG.restaurante+'*\n\nNome: *'+r.name+'*\nData: '+d[2]+'/'+d[1]+'/'+d[0]+' às '+r.time+'\nPessoas: '+r.people+'\nAmbiente: '+r.ambiente+(r.preferencia?' — '+r.preferencia:'')+'\nOcasião: '+r.ocasiao+'\nTelefone: '+r.phone+'\n'+(r.obs?'Obs: '+r.obs+'\n':'')+'Código: *'+codigo+'*\n\nConfirmar agora:\n'+link+'\n\nPara recusar, acesse o painel.';
-  // Usa grupo se configurado, senão usa telefone do gerente
   var destino = CONFIG.groupId ? CONFIG.groupId : '55'+CONFIG.managerPhone.replace(/\D/g,'').replace(/^55/,'');
   try{await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text',{method:'POST',headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken},body:JSON.stringify({phone:destino,message:msg})});}catch(e){}
+}
+
+async function notificarCliente(r, codigo) {
+  if(!CONFIG.zapiInstance||CONFIG.zapiInstance==='SUA_INSTANCIA') return;
+  var d=r.date.split('-');
+  var dataFmt=d[2]+'/'+d[1]+'/'+d[0];
+  var msg='Olá, *'+r.name.split(' ')[0]+'*! 🎉\n\nSua reserva no *'+CONFIG.restaurante+'* foi recebida com sucesso!\n\n📅 *'+dataFmt+'* às *'+r.time+'*\n🪑 Ambiente: *'+r.ambiente+'*'+(r.preferencia?'\n📍 Preferência: '+r.preferencia:'')+'\n👥 *'+r.people+(r.people===1?' pessoa':' pessoas')+'*\n🔑 Código: *'+codigo+'*\n\nAguarde a confirmação — nosso gerente irá aprovar em breve e você receberá uma mensagem aqui. 😊\n\nQualquer dúvida, é só responder esta mensagem!';
+  var phone='55'+r.phone.replace(/\D/g,'').replace(/^55/,'');
+  try{await fetch('https://api.z-api.io/instances/'+CONFIG.zapiInstance+'/token/'+CONFIG.zapiToken+'/send-text',{method:'POST',headers:{'Content-Type':'application/json','client-token':CONFIG.zapiClientToken},body:JSON.stringify({phone:phone,message:msg})});}catch(e){}
 }
 </script>
 </body>
